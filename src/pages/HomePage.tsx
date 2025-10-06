@@ -4,7 +4,7 @@ import { Upload, FileText, MessageSquare, Sparkles, TrendingUp, BookOpen, Chevro
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
-import { savePDF, savePDFText, getAllPDFs, deletePDF } from '../services/storage.service';
+import { savePDF, savePDFText, getAllPDFs, deletePDF, uploadPDFFile } from '../services/storage.service';
 import { getPDFMetadata, extractTextFromPDF } from '../services/pdf.service';
 import { type PDF } from '../types';
 import { Check } from 'lucide-react';
@@ -80,35 +80,33 @@ const HomePage = () => {
     setUploading(true);
 
     try {
-      const id = `pdf-${Date.now()}`;
-
-      // Get metadata
+      console.log('Uploading PDF to Supabase Storage...');
+      const fileUrl = await uploadPDFFile(selectedFile);
+      console.log('File uploaded successfully:', fileUrl);
       const meta = await getPDFMetadata(selectedFile);
-
-      // Extract text from PDF
       console.log('Extracting text from PDF...');
       const pdfText = await extractTextFromPDF(selectedFile);
-
-      // Save PDF text
-      await savePDFText(id, pdfText);
-      console.log('PDF text saved successfully');
-
-      // Create PDF object
-      const url = URL.createObjectURL(selectedFile);
+      const id = crypto.randomUUID();
       const newPDF: PDF = {
         id,
         name: selectedFile.name,
-        file: selectedFile,
-        url,
-        uploadedAt: new Date(),
+        uploadedAt: new Date().toISOString(),
+        fileUrl: fileUrl,
+        size: selectedFile.size,
+        numPages: meta.numPages || 0,
         totalPages: meta.numPages || 0,
         isSeeded: false,
       };
 
-      // Save PDF
+      console.log('Saving PDF metadata...');
       await savePDF(newPDF);
-      await loadPDFs();
 
+      console.log('Saving PDF text...');
+      await savePDFText(id, pdfText);
+
+      console.log('PDF uploaded successfully!');
+
+      await loadPDFs();
       setSelectedFile(null);
       setShowUpload(false);
     } catch (error) {
@@ -170,7 +168,7 @@ const HomePage = () => {
               className="bg-white text-indigo-600 hover:bg-white/90 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
             >
               <Upload className="h-5 w-5 mr-2" />
-              Upload Your First PDF
+              Upload Your PDF
             </Button>
             <Button
               variant="outline"

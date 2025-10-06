@@ -1,58 +1,125 @@
-import Dexie, { type Table } from 'dexie';
+import { supabase } from './supabaseClient';
 import { type PDF, type Quiz, type QuizAttempt, type ChatSession, type UserProgress } from '../types';
 
-class StudyAppDatabase extends Dexie {
-  pdfs!: Table<PDF, string>;
-  quizzes!: Table<Quiz, string>;
-  attempts!: Table<QuizAttempt, string>;
-  chats!: Table<ChatSession, string>;
-  pdfTexts!: Table<{ id: string; text: string }, string>;
+export const uploadPDFFile = async (file: File): Promise<string> => {
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+  const filePath = fileName;
 
-  constructor() {
-    super('StudyAppDB');
-
-    this.version(2).stores({
-      pdfs: 'id, name, uploadedAt',
-      quizzes: 'id, pdfId, createdAt',
-      attempts: 'id, quizId, pdfId, completedAt',
-      chats: 'id, createdAt, updatedAt',
-      pdfTexts: 'id'
+  const { error: uploadError } = await supabase.storage
+    .from('study-app-pdfs')
+    .upload(filePath, file, {
+      cacheControl: '3600',
+      upsert: false
     });
 
-    this.version(1).stores({
-      pdfs: 'id, name, uploadedAt',
-      quizzes: 'id, pdfId, createdAt',
-      attempts: 'id, quizId, pdfId, completedAt',
-      chats: 'id, createdAt, updatedAt'
-    });
+  if (uploadError) {
+    console.error('Upload error:', uploadError);
+    throw uploadError;
   }
-}
 
-const db = new StudyAppDatabase();
+  const { data } = supabase.storage
+    .from('study-app-pdfs')
+    .getPublicUrl(filePath);
 
-// PDF Operations
+  return data.publicUrl;
+};
+
 export const savePDF = async (pdf: PDF): Promise<void> => {
-  await db.pdfs.put(pdf);
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const pdfData: any = {
+    id: pdf.id,
+    name: pdf.name,
+    uploaded_at: pdf.uploadedAt,
+    user_id: user?.id || null,
+  };
+
+  if ((pdf as any).fileUrl) pdfData.file_url = (pdf as any).fileUrl;
+  if ((pdf as any).size) pdfData.size = (pdf as any).size;
+  if ((pdf as any).numPages) pdfData.num_pages = (pdf as any).numPages;
+
+  const { error } = await supabase
+    .from('pdfs')
+    .upsert(pdfData, { onConflict: 'id' });
+
+  if (error) {
+    console.error('Error saving PDF:', error);
+    throw error;
+  }
 };
 
 export const getAllPDFs = async (): Promise<PDF[]> => {
-  return await db.pdfs.toArray();
+  const { data, error } = await supabase
+    .from('pdfs')
+    .select('*')
+    .order('uploaded_at', { ascending: false });
+
+  if (error) {
+    console.error('Error getting PDFs:', error);
+    throw error;
+  }
+
+  return (data || []).map(row => ({
+    id: row.id,
+    name: row.name,
+    uploadedAt: row.uploaded_at,
+    fileUrl: row.file_url,
+    size: row.size,
+    numPages: row.num_pages
+  } as PDF));
 };
 
 export const getPDFById = async (id: string): Promise<PDF | undefined> => {
-  return await db.pdfs.get(id);
+  const { data, error } = await supabase
+    .from('pdfs')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST116') return undefined;
+    console.error('Error getting PDF by ID:', error);
+    throw error;
+  }
+
+  return {
+    id: data.id,
+    name: data.name,
+    uploadedAt: data.uploaded_at,
+    fileUrl: data.file_url,
+    size: data.size,
+    numPages: data.num_pages
+  } as PDF;
 };
 
-export const deletePDF = async (pdfId: string) => {
+export const deletePDF = async (pdfId: string): Promise<void> => {
   try {
-    await db.pdfs.delete(pdfId);
-    await db.pdfTexts.delete(pdfId);
+    const pdf = await getPDFById(pdfId);
 
-    const quizzes = await db.quizzes.where('pdfId').equals(pdfId).toArray();
-    for (const quiz of quizzes) await db.quizzes.delete(quiz.id);
+    if (pdf && (pdf as any).fileUrl) {
+      const url = (pdf as any).fileUrl;
+      const urlParts = url.split('/');
+      const fileName = urlParts[urlParts.length - 1];
 
-    const attempts = await db.attempts.where('pdfId').equals(pdfId).toArray();
-    for (const attempt of attempts) await db.attempts.delete(attempt.id);
+      const { error: storageError } = await supabase.storage
+        .from('study-app-pdfs')
+        .remove([fileName]);
+
+      if (storageError) {
+        console.warn('Error deleting file from storage:', storageError);
+      }
+    }
+
+    const { error } = await supabase
+      .from('pdfs')
+      .delete()
+      .eq('id', pdfId);
+
+    if (error) {
+      console.error('Error deleting PDF from database:', error);
+      throw error;
+    }
 
     console.log(`Deleted PDF ${pdfId} and related data`);
   } catch (err) {
@@ -62,41 +129,162 @@ export const deletePDF = async (pdfId: string) => {
 };
 
 export const savePDFText = async (pdfId: string, text: string): Promise<void> => {
-  await db.pdfTexts.put({ id: pdfId, text });
+  const { error } = await supabase
+    .from('pdf_texts')
+    .upsert({
+      id: pdfId,
+      text: text
+    });
+
+  if (error) {
+    console.error('Error saving PDF text:', error);
+    throw error;
+  }
 };
 
 export const getPDFText = async (pdfId: string): Promise<string | undefined> => {
-  const result = await db.pdfTexts.get(pdfId);
-  return result?.text;
+  const { data, error } = await supabase
+    .from('pdf_texts')
+    .select('text')
+    .eq('id', pdfId)
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST116') return undefined;
+    console.error('Error getting PDF text:', error);
+    throw error;
+  }
+
+  return data?.text;
 };
 
-// Quiz Operations
 export const saveQuiz = async (quiz: Quiz): Promise<void> => {
-  await db.quizzes.put(quiz);
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const { error } = await supabase
+    .from('quizzes')
+    .upsert({
+      id: quiz.id,
+      pdf_id: quiz.pdfId,
+      questions: quiz.questions,
+      created_at: quiz.createdAt,
+      user_id: user?.id || null
+    });
+
+  if (error) {
+    console.error('Error saving quiz:', error);
+    throw error;
+  }
 };
 
 export const getQuizzesByPDF = async (pdfId: string): Promise<Quiz[]> => {
-  return await db.quizzes.where('pdfId').equals(pdfId).toArray();
+  const { data, error } = await supabase
+    .from('quizzes')
+    .select('*')
+    .eq('pdf_id', pdfId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error getting quizzes by PDF:', error);
+    throw error;
+  }
+
+  return (data || []).map(row => ({
+    id: row.id,
+    pdfId: row.pdf_id,
+    questions: row.questions,
+    createdAt: row.created_at
+  }));
 };
 
 export const getQuizById = async (id: string): Promise<Quiz | undefined> => {
-  return await db.quizzes.get(id);
+  const { data, error } = await supabase
+    .from('quizzes')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST116') return undefined;
+    console.error('Error getting quiz by ID:', error);
+    throw error;
+  }
+
+  return {
+    id: data.id,
+    pdfId: data.pdf_id,
+    questions: data.questions,
+    createdAt: data.created_at
+  };
 };
 
-// Quiz Attempt Operations
 export const saveQuizAttempt = async (attempt: QuizAttempt): Promise<void> => {
-  await db.attempts.put(attempt);
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const { error } = await supabase
+    .from('quiz_attempts')
+    .upsert({
+      id: attempt.id,
+      quiz_id: attempt.quizId,
+      pdf_id: attempt.pdfId,
+      score: attempt.score,
+      max_score: attempt.maxScore,
+      correct_answers: attempt.correctAnswers,
+      completed_at: attempt.completedAt,
+      user_id: user?.id || null
+    });
+
+  if (error) {
+    console.error('Error saving quiz attempt:', error);
+    throw error;
+  }
 };
 
 export const getAttemptsByQuiz = async (quizId: string): Promise<QuizAttempt[]> => {
-  return await db.attempts.where('quizId').equals(quizId).toArray();
+  const { data, error } = await supabase
+    .from('quiz_attempts')
+    .select('*')
+    .eq('quiz_id', quizId)
+    .order('completed_at', { ascending: false });
+
+  if (error) {
+    console.error('Error getting attempts by quiz:', error);
+    throw error;
+  }
+
+  return (data || []).map(row => ({
+    id: row.id,
+    quizId: row.quiz_id,
+    pdfId: row.pdf_id,
+    score: row.score,
+    maxScore: row.max_score,
+    correctAnswers: row.correct_answers,
+    completedAt: row.completed_at
+  }));
 };
 
 export const getAllAttempts = async (): Promise<QuizAttempt[]> => {
-  return await db.attempts.toArray();
+  const { data, error } = await supabase
+    .from('quiz_attempts')
+    .select('*')
+    .order('completed_at', { ascending: false });
+
+  if (error) {
+    console.error('Error getting all attempts:', error);
+    throw error;
+  }
+
+  return (data || []).map(row => ({
+    id: row.id,
+    quizId: row.quiz_id,
+    pdfId: row.pdf_id,
+    score: row.score,
+    maxScore: row.max_score,
+    correctAnswers: row.correct_answers,
+    completedAt: row.completed_at
+  }));
 };
 
-// Progress Calculation
 export const calculateUserProgress = async (): Promise<UserProgress> => {
   const attempts = await getAllAttempts();
 
@@ -118,7 +306,7 @@ export const calculateUserProgress = async (): Promise<UserProgress> => {
   const topicScores: Record<string, { correct: number; total: number }> = {};
 
   for (const attempt of attempts) {
-    const quiz = await db.quizzes.get(attempt.quizId);
+    const quiz = await getQuizById(attempt.quizId);
     if (!quiz) continue;
 
     for (const question of quiz.questions) {
@@ -149,31 +337,89 @@ export const calculateUserProgress = async (): Promise<UserProgress> => {
     strengths,
     weaknesses,
     topicScores,
-    recentAttempts: attempts.slice(-10).reverse()
+    recentAttempts: attempts.slice(0, 10)
   };
 };
 
-// Chat Operations
 export const saveChatSession = async (session: ChatSession): Promise<void> => {
-  await db.chats.put(session);
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const { error } = await supabase
+    .from('chat_sessions')
+    .upsert({
+      id: session.id,
+      messages: session.messages,
+      pdf_context: session.pdfContext || [],
+      created_at: session.createdAt,
+      updated_at: session.updatedAt || new Date().toISOString(),
+      user_id: user?.id || null
+    });
+
+  if (error) {
+    console.error('Error saving chat session:', error);
+    throw error;
+  }
 };
 
 export const getAllChatSessions = async (): Promise<ChatSession[]> => {
-  return await db.chats.orderBy('updatedAt').reverse().toArray();
+  const { data, error } = await supabase
+    .from('chat_sessions')
+    .select('*')
+    .order('updated_at', { ascending: false });
+
+  if (error) {
+    console.error('Error getting all chat sessions:', error);
+    throw error;
+  }
+
+  return (data || []).map(row => ({
+    id: row.id,
+    messages: row.messages || [],
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    pdfContext: row.pdf_context || row.pdfContext || []
+  }));
 };
 
 export const getChatSession = async (id: string): Promise<ChatSession | undefined> => {
-  return await db.chats.get(id);
+  const { data, error } = await supabase
+    .from('chat_sessions')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST116') return undefined;
+    console.error('Error getting chat session:', error);
+    throw error;
+  }
+
+  return {
+    id: data.id,
+    messages: data.messages || [],
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
+    pdfContext: data.pdf_context || data.pdfContext || []
+  };
 };
 
 export const deleteChatSession = async (id: string): Promise<void> => {
   try {
-    const deleted = await db.chats.delete(id);
-    console.log('Deleted chat session:', id, deleted);
+    const { error } = await supabase
+      .from('chat_sessions')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting chat session:', error);
+      throw error;
+    }
+
+    console.log('Deleted chat session:', id);
   } catch (err) {
     console.error('deleteChatSession failed:', err);
     throw err;
   }
 };
 
-export default db;
+export default {};

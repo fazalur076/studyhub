@@ -6,7 +6,7 @@ import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import SourceSelector from '../components/pdf/SourceSelector';
-import { getAllPDFs, getPDFById, saveQuiz, saveQuizAttempt, savePDF, deletePDF } from '../services/storage.service';
+import {  getAllPDFs, getPDFById, saveQuiz, saveQuizAttempt, savePDF, deletePDF, uploadPDFFile, savePDFText,  getPDFText } from '../services/storage.service';
 import { extractTextFromPDF, getPDFMetadata } from '../services/pdf.service';
 import { generateQuiz } from '../services/openai.service';
 import { type PDF } from '../types';
@@ -75,22 +75,43 @@ const QuizPage = () => {
 
   const handleUpload = async () => {
     if (!selectedFile) return;
-    const id = `pdf-${Date.now()}`;
-    const meta = await getPDFMetadata(selectedFile);
-    const url = URL.createObjectURL(selectedFile);
-    const newPDF: PDF = {
-      id,
-      name: selectedFile.name,
-      file: selectedFile,
-      url,
-      uploadedAt: new Date(),
-      totalPages: meta.numPages || 0,
-      isSeeded: false,
-    };
-    await savePDF(newPDF);
-    await loadPDFs();
-    setSelectedFile(null);
-    setShowUpload(false);
+
+    try {
+      console.log('Uploading PDF to Supabase Storage...');
+      const fileUrl = await uploadPDFFile(selectedFile);
+      console.log('File uploaded successfully:', fileUrl);
+
+      const meta = await getPDFMetadata(selectedFile);
+
+      console.log('Extracting text from PDF...');
+      const pdfText = await extractTextFromPDF(selectedFile);
+
+      const id = crypto.randomUUID();
+
+      const newPDF: PDF = {
+        id,
+        name: selectedFile.name,
+        uploadedAt: new Date().toISOString(),
+        fileUrl: fileUrl,
+        size: selectedFile.size,
+        numPages: meta.numPages || 0,
+        totalPages: meta.numPages || 0,
+        isSeeded: false,
+      };
+
+      await savePDF(newPDF);
+
+      await savePDFText(id, pdfText);
+
+      console.log('PDF uploaded successfully!');
+
+      await loadPDFs();
+      setSelectedFile(null);
+      setShowUpload(false);
+    } catch (error) {
+      console.error('Error uploading PDF:', error);
+      alert('Failed to upload PDF. Please try again.');
+    }
   };
 
   const handleSelectAll = () => {
@@ -110,66 +131,72 @@ const QuizPage = () => {
       alert('Please select at least one PDF');
       return;
     }
-    
+
     setLoading(true);
-    
+
     try {
       let allText = '';
-      
+
       for (const pdfId of selectedPDFs) {
-        const pdf = await getPDFById(pdfId);
-        if (!pdf) continue;
-        
-        let pdfText = '';
-        
-        if (pdf.url && !pdf.file) {
-          const response = await fetch(pdf.url);
+        const pdfText = await getPDFText(pdfId);
+
+        if (pdfText) {
+          allText += pdfText + '\n\n';
+        } else {
+          console.warn(`No saved text for PDF ${pdfId}, extracting now...`);
+          const pdf = await getPDFById(pdfId);
+
+          if (!pdf || !pdf.fileUrl) {
+            console.warn(`Skipping PDF ${pdfId} - no file URL`);
+            continue;
+          }
+
+          const response = await fetch(pdf.fileUrl);
           const blob = await response.blob();
           const file = new File([blob], pdf.name, { type: 'application/pdf' });
-          pdfText = await extractTextFromPDF(file);
-        } else if (pdf.file) {
-          pdfText = await extractTextFromPDF(pdf.file);
+          const extractedText = await extractTextFromPDF(file);
+
+          await savePDFText(pdfId, extractedText);
+          allText += extractedText + '\n\n';
         }
-        
-        allText += pdfText + '\n\n';
       }
-      
+
       if (!allText.trim()) {
         throw new Error('No text extracted from PDFs');
       }
-      
+
       console.log('Extracted text length:', allText.length);
-      
+
       const questions = await generateQuiz({
         pdfContent: allText,
         quizType: quizType as any,
         numQuestions: numQuestions,
         difficulty: 'medium'
       });
-      
+
       console.log('Generated questions:', questions);
-      
+
       if (!questions || questions.length === 0) {
         throw new Error('No questions generated');
       }
-      
+
       const newQuiz = {
-        id: `quiz-${Date.now()}`,
+        id: crypto.randomUUID(),
         pdfId: selectedPDFs[0],
         type: quizType as any,
         questions: questions.map((q, idx) => ({
           ...q,
-          id: `q-${Date.now()}-${idx}`
+          id: crypto.randomUUID()
         })),
-        createdAt: new Date()
+        createdAt: new Date().toISOString()
       };
-      
+
       console.log('Created quiz object:', newQuiz);
-      
+
       await saveQuiz(newQuiz);
       setCurrentQuiz(newQuiz);
       setAnswers({});
-      
+
     } catch (error) {
       console.error('Quiz generation error:', error);
       alert(`Failed to generate quiz: ${error.message}`);
@@ -180,35 +207,35 @@ const QuizPage = () => {
 
   const handleQuizSubmit = async () => {
     if (!currentQuiz) return;
-    
+
     let score = 0;
     const correctAnswers: string[] = [];
-    
+
     currentQuiz.questions.forEach(question => {
       const userAnswer = answers[question.id]?.toLowerCase().trim();
       const correctAnswer = question.correctAnswer.toLowerCase().trim();
-      
+
       if (userAnswer === correctAnswer) {
         score++;
         correctAnswers.push(question.id);
       }
     });
-    
+
     const attempt = {
-      id: `attempt-${Date.now()}`,
+      id: crypto.randomUUID(),
       quizId: currentQuiz.id,
       pdfId: currentQuiz.pdfId,
       score,
       maxScore: currentQuiz.questions.length,
       correctAnswers,
       userAnswers: answers,
-      completedAt: new Date()
+      completedAt: new Date().toISOString()
     };
-    
+
     console.log('Quiz attempt:', attempt);
-    
+
     await saveQuizAttempt(attempt);
-    
+
     setQuizAttempt(attempt);
     setShowResults(true);
   };

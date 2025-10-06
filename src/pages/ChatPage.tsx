@@ -21,7 +21,17 @@ const ChatPage = () => {
   useEffect(() => {
     loadData();
     const stored = localStorage.getItem('selectedPDFs');
-    if (stored) setSelectedPDFs(JSON.parse(stored));
+    if (stored) {
+      try {
+        setSelectedPDFs(JSON.parse(stored));
+      } catch (err) {
+        console.warn('Failed to parse selectedPDFs from localStorage:', stored, err);
+        setSelectedPDFs([]);
+        localStorage.removeItem('selectedPDFs');
+      }
+    } else {
+      setSelectedPDFs([]);
+    }
   }, []);
 
   const loadData = async () => {
@@ -44,12 +54,12 @@ const ChatPage = () => {
     localStorage.setItem('selectedPDFs', JSON.stringify(selectedPDFs));
 
     const newSession: ChatSession = {
-      id: `chat-${Date.now()}`,
+      id: crypto.randomUUID(),
       title: 'New Chat',
       messages: [],
       pdfContext: selectedPDFs,
-      createdAt: new Date(),
-      updatedAt: new Date()
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
 
     await saveChatSession(newSession);

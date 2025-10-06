@@ -21,11 +21,14 @@ const ChatInterface = ({ session, onUpdateSession, onDeleteSession }: ChatInterf
   const [loading, setLoading] = useState(false);
   const [pdfChunks, setPdfChunks] = useState<PDFChunk[]>([]);
   const [loadingPdfs, setLoadingPdfs] = useState(true);
-  const [activePDFId, setActivePDFId] = useState<string | null>(session.pdfContext.length > 0 ? session.pdfContext[0] : null);
+  const [activePDFId, setActivePDFId] = useState<string | null>(
+    session.pdfContext?.length ? session.pdfContext[0] : null
+  );
   const [showPDFPanel, setShowPDFPanel] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pdfDetails, setPdfDetails] = useState<Map<string, { name: string, numPages: number }>>(new Map());
 
   useEffect(() => {
     scrollToBottom();
@@ -42,19 +45,27 @@ const ChatInterface = ({ session, onUpdateSession, onDeleteSession }: ChatInterf
   const loadPDFContent = async () => {
     setLoadingPdfs(true);
     const allChunks: PDFChunk[] = [];
+    const details = new Map<string, { name: string, numPages: number }>();
 
     try {
-      for (const pdfId of session.pdfContext) {
+      const pdfContextArray = Array.isArray(session.pdfContext) ? session.pdfContext : [];
+
+      for (const pdfId of pdfContextArray) { 
         let pdfText = await getPDFText(pdfId);
+        const pdf = await getPDFById(pdfId);
+
+        if (pdf) {
+          details.set(pdfId, {
+            name: pdf.name,
+            numPages: pdf.numPages || 0
+          });
+        }
 
         if (!pdfText) {
-          const pdf = await getPDFById(pdfId);
           if (!pdf) continue;
 
-          if (pdf.file) {
-            pdfText = await extractTextFromPDF(pdf.file);
-          } else if (pdf.url) {
-            pdfText = await extractTextFromURL(pdf.url);
+          if (pdf.fileUrl) {
+            pdfText = await extractTextFromURL(pdf.fileUrl);
           }
 
           if (pdfText) {
@@ -70,6 +81,7 @@ const ChatInterface = ({ session, onUpdateSession, onDeleteSession }: ChatInterf
       }
 
       setPdfChunks(allChunks);
+      setPdfDetails(details);
     } catch (error) {
       console.error('Error loading PDF content:', error);
     } finally {
@@ -344,21 +356,30 @@ const ChatInterface = ({ session, onUpdateSession, onDeleteSession }: ChatInterf
 
         {/* PDF Viewer Panel */}
         {showPDFPanel && activePDFId && (
-          <div className="flex-1 border-l border-slate-200 overflow-auto">
-            <div className="p-4 border-b border-slate-200 flex items-center gap-2 bg-gray-50">
-              {session.pdfContext.map(pdfId => (
-                <Button
-                  key={pdfId}
-                  onClick={() => setActivePDFId(pdfId)}
-                  size="sm"
-                  className={activePDFId === pdfId ? 'bg-indigo-600 text-white' : ''}
-                >
-                  {pdfId}
-                </Button>
-              ))}
+          <div className="flex-1 border-l border-slate-200 overflow-hidden flex flex-col">
+            <div className="p-4 border-b border-slate-200 bg-gradient-to-r from-indigo-50 to-purple-50 flex items-center gap-2 overflow-x-auto">
+              {session.pdfContext.map(pdfId => {
+                const detail = pdfDetails.get(pdfId);
+                return (
+                  <Button
+                    key={pdfId}
+                    onClick={() => setActivePDFId(pdfId)}
+                    size="sm"
+                    variant={activePDFId === pdfId ? 'default' : 'outline'}
+                    className={`flex-shrink-0 ${activePDFId === pdfId
+                        ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700'
+                        : 'border-2 hover:border-indigo-300'
+                      }`}
+                  >
+                    <BookOpen className="h-4 w-4 mr-2" />
+                    {detail ? detail.name.slice(0, 20) + (detail.name.length > 20 ? '...' : '') : 'Loading...'}
+                  </Button>
+                );
+              })}
             </div>
-            {/* Pass the PDF URL or object */}
-            <PDFViewer pdfUrl={activePDFId} />
+            <div className="flex-1 overflow-hidden">
+              <PDFViewer pdfUrl={activePDFId} />
+            </div>
           </div>
         )}
       </div>

@@ -26,7 +26,12 @@ const ChatMessageComponent = ({ message }: ChatMessageProps) => {
           {/* Timestamp */}
           <div className={`mt-3 flex items-center gap-2 text-xs ${isUser ? 'text-indigo-100' : 'text-slate-500'}`}>
             <Clock className="h-3 w-3" />
-            <span>{message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+            <span>
+              {typeof message.timestamp === 'string'
+                ? new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                : message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+              }
+            </span>
           </div>
 
           {/* Citations */}

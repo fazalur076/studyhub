@@ -35,6 +35,8 @@ const Layout = () => {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+    localStorage.removeItem('selectedPDFs');
+    localStorage.clear();
     navigate('/login');
   };
 
@@ -51,20 +53,18 @@ const Layout = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Link to="/" className="flex items-center gap-2 group">
-              <Link to="/" className="flex items-center gap-2 group">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl blur opacity-50 group-hover:opacity-75 transition-opacity"></div>
-                  <div className="relative bg-gradient-to-r from-indigo-600 to-purple-600 p-2 rounded-xl">
-                    <BookOpen className="h-5 w-5 text-white" />
-                  </div>
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl blur opacity-50 group-hover:opacity-75 transition-opacity"></div>
+                <div className="relative bg-gradient-to-r from-indigo-600 to-purple-600 p-2 rounded-xl">
+                  <BookOpen className="h-5 w-5 text-white" />
                 </div>
-                <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                  StudyHub
-                </span>
-                <Sparkles className="h-4 w-4 text-yellow-500 animate-pulse" />
-              </Link>
-
+              </div>
+              <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                StudyHub
+              </span>
+              <Sparkles className="h-4 w-4 text-yellow-500 animate-pulse" />
             </Link>
+
 
             <div className="flex items-center gap-4">
               <nav className="hidden md:flex items-center gap-2">

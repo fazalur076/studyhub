@@ -1,12 +1,11 @@
-// src/types/index.ts
-
 export interface PDF {
   id: string;
   name: string;
-  file: File | null;
-  url?: string;
-  uploadedAt: Date;
-  totalPages: number;
+  uploadedAt: string;
+  fileUrl?: string;
+  size?: number;
+  numPages?: number;
+  totalPages?: number;
   isSeeded?: boolean;
 }
 
@@ -51,18 +50,22 @@ export interface UserProgress {
   recentAttempts: QuizAttempt[];
 }
 
-export interface ChatMessage {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  citations?: Citation[];
-  timestamp: Date;
-}
-
 export interface Citation {
   page: number;
   snippet: string;
   pdfId: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string;
+  citations?: Array<{
+    page: number;
+    snippet: string;
+    pdfId: string;
+  }>;
 }
 
 export interface ChatSession {
@@ -70,8 +73,8 @@ export interface ChatSession {
   title: string;
   messages: ChatMessage[];
   pdfContext: string[];
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface VideoRecommendation {
