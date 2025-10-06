@@ -1,4 +1,4 @@
-import { Check, BookOpen, Sparkles } from 'lucide-react';
+import { Check, BookOpen, Sparkles, Trash } from 'lucide-react';
 import { type PDF } from '../../types';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
@@ -7,9 +7,10 @@ interface SourceSelectorProps {
   pdfs: PDF[];
   selectedPDFs: string[];
   onSelectionChange: (selectedIds: string[]) => void;
+  onDeletePDF?: (pdfId: string) => void;
 }
 
-const SourceSelector = ({ pdfs, selectedPDFs, onSelectionChange }: SourceSelectorProps) => {
+const SourceSelector = ({ pdfs, selectedPDFs, onSelectionChange, onDeletePDF }: SourceSelectorProps) => {
   const handleSelectAll = () => {
     if (selectedPDFs.length === pdfs.length) {
       onSelectionChange([]);
@@ -56,21 +57,24 @@ const SourceSelector = ({ pdfs, selectedPDFs, onSelectionChange }: SourceSelecto
             {pdfs.map((pdf) => {
               const isSelected = selectedPDFs.includes(pdf.id);
               return (
-                <button
+                <div
                   key={pdf.id}
-                  onClick={() => handleTogglePDF(pdf.id)}
-                  className={`text-left group p-5 rounded-xl border-2 transition-all duration-300 ${
-                    isSelected
+                  className={`relative p-5 rounded-xl border-2 transition-all duration-300 w-full cursor-pointer ${isSelected
                       ? 'border-indigo-500 bg-gradient-to-r from-indigo-50 to-purple-50 shadow-lg scale-[1.02]'
                       : 'border-slate-200 hover:border-indigo-300 hover:shadow-md hover:scale-[1.01]'
-                  }`}
+                    }`}
+                  onClick={() => handleTogglePDF(pdf.id)}
                 >
                   <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${
-                      isSelected ? 'bg-gradient-to-r from-indigo-600 to-purple-600' : 'bg-slate-100 group-hover:bg-slate-200'
-                    }`}>
+                    <div
+                      className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${isSelected
+                          ? 'bg-gradient-to-r from-indigo-600 to-purple-600'
+                          : 'bg-slate-100 hover:bg-slate-200'
+                        }`}
+                    >
                       <BookOpen className={`h-6 w-6 ${isSelected ? 'text-white' : 'text-slate-600'}`} />
                     </div>
+
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-slate-800 truncate">{pdf.name}</p>
                       <p className="text-xs text-slate-600 mt-1">
@@ -78,13 +82,26 @@ const SourceSelector = ({ pdfs, selectedPDFs, onSelectionChange }: SourceSelecto
                         {pdf.totalPages ? ` • ${pdf.totalPages} pages` : ''}
                       </p>
                     </div>
+
                     {isSelected && (
-                      <div className="w-7 h-7 bg-indigo-500 rounded-full flex items-center justify-center flex-shrink-0">
-                        <Check className="w-4 h-4 text-white" />
+                      <div className="flex items-center gap-2 flex-shrink-0">
+
+                        {onDeletePDF && (
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDeletePDF(pdf.id);
+                            }}
+                            className="w-7 h-7 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center cursor-pointer"
+                            title="Delete PDF"
+                          >
+                            <Trash className="w-4 h-4 text-white" />
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
-                </button>
+                </div>
               );
             })}
           </div>

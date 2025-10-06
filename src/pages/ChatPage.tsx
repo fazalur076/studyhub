@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MessageSquare, Sparkles, BookOpen, Zap, Target } from 'lucide-react';
-import { getAllChatSessions, saveChatSession, getAllPDFs } from '../services/storage.service';
+import { getAllChatSessions, saveChatSession, getAllPDFs, deleteChatSession } from '../services/storage.service';
 import { type ChatSession, type PDF } from '../types';
 import ChatSidebar from '../components/chat/ChatSidebar';
 import ChatInterface from '../components/chat/ChatInterface';
@@ -15,6 +16,7 @@ const ChatPage = () => {
   const [selectedPDFs, setSelectedPDFs] = useState<string[]>([]);
   const [showSourceSelector, setShowSourceSelector] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadData();
@@ -68,6 +70,27 @@ const ChatPage = () => {
     setCurrentSession(updatedSession);
     await loadData();
   };
+
+  const handleDeleteSession = async (sessionId: string) => {
+    if (!sessionId) return;
+
+    try {
+      await deleteChatSession(sessionId);
+
+      setSessions(prev => prev.filter(s => s.id !== sessionId));
+      if (currentSession?.id === sessionId) {
+        setCurrentSession(null);
+        setSelectedPDFs([]);
+        localStorage.removeItem('selectedPDFs');
+      }
+
+      console.log('Chat deleted successfully, UI updated');
+    } catch (error) {
+      console.error('Failed to delete chat', error);
+      alert('Failed to delete chat. See console for details.');
+    }
+  };
+
 
   const suggestedPrompts = [
     { icon: Sparkles, text: "Explain this concept in simple terms", gradient: "from-purple-500 to-pink-500" },
@@ -237,10 +260,12 @@ const ChatPage = () => {
             </div>
           </div>
         ) : currentSession ? (
-          <ChatInterface
-            session={currentSession}
-            onUpdateSession={handleUpdateSession}
-          />
+            <ChatInterface
+              session={currentSession}
+              onUpdateSession={handleUpdateSession}
+              onDeleteSession={() => handleDeleteSession(currentSession.id)}
+            />
+
         ) : (
           <div className="flex-1 flex items-center justify-center p-8">
             <div className="text-center max-w-2xl">

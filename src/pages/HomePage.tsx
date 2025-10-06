@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, FileText, MessageSquare, Sparkles, TrendingUp, BookOpen, ChevronRight, File } from 'lucide-react';
+import { Upload, FileText, MessageSquare, Sparkles, TrendingUp, BookOpen, ChevronRight, File, Loader, X, Trash } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { Badge } from '../components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
-import { savePDF, getAllPDFs } from '../services/storage.service';
-import { getPDFMetadata } from '../services/pdf.service';
+import { savePDF, savePDFText, getAllPDFs, deletePDF } from '../services/storage.service';
+import { getPDFMetadata, extractTextFromPDF } from '../services/pdf.service';
 import { type PDF } from '../types';
 import { Check } from 'lucide-react';
+import ConfirmModal from '../components/ui/confirmModal';
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -17,6 +17,9 @@ const HomePage = () => {
   const [showUpload, setShowUpload] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pdfToDelete, setPdfToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     void loadPDFs();
@@ -29,7 +32,7 @@ const HomePage = () => {
     setPdfs(all);
   };
 
-  const handleDrag = (e) => {
+  const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (e.type === "dragenter" || e.type === "dragover") {
@@ -39,7 +42,7 @@ const HomePage = () => {
     }
   };
 
-  const handleDrop = (e) => {
+  const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
@@ -48,24 +51,72 @@ const HomePage = () => {
     }
   };
 
+  const handleDeletePDF = (pdfId: string) => {
+    setPdfToDelete(pdfId);
+    setConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!pdfToDelete) return;
+
+    try {
+      await deletePDF(pdfToDelete);
+      const next = selectedPDFs.filter(id => id !== pdfToDelete);
+      setSelectedPDFs(next);
+      localStorage.setItem('selectedPDFs', JSON.stringify(next));
+      await loadPDFs();
+    } catch (error) {
+      console.error('Error deleting PDF:', error);
+      alert('Failed to delete PDF. Please try again.');
+    } finally {
+      setConfirmOpen(false);
+      setPdfToDelete(null);
+    }
+  };
+  
   const handleUpload = async () => {
     if (!selectedFile) return;
-    const id = `pdf-${Date.now()}`;
-    const meta = await getPDFMetadata(selectedFile);
-    const url = URL.createObjectURL(selectedFile);
-    const newPDF: PDF = {
-      id,
-      name: selectedFile.name,
-      file: selectedFile,
-      url,
-      uploadedAt: new Date(),
-      totalPages: meta.numPages || 0,
-      isSeeded: false,
-    };
-    await savePDF(newPDF);
-    await loadPDFs();
-    setSelectedFile(null);
-    setShowUpload(false);
+
+    setUploading(true);
+
+    try {
+      const id = `pdf-${Date.now()}`;
+
+      // Get metadata
+      const meta = await getPDFMetadata(selectedFile);
+
+      // Extract text from PDF
+      console.log('Extracting text from PDF...');
+      const pdfText = await extractTextFromPDF(selectedFile);
+
+      // Save PDF text
+      await savePDFText(id, pdfText);
+      console.log('PDF text saved successfully');
+
+      // Create PDF object
+      const url = URL.createObjectURL(selectedFile);
+      const newPDF: PDF = {
+        id,
+        name: selectedFile.name,
+        file: selectedFile,
+        url,
+        uploadedAt: new Date(),
+        totalPages: meta.numPages || 0,
+        isSeeded: false,
+      };
+
+      // Save PDF
+      await savePDF(newPDF);
+      await loadPDFs();
+
+      setSelectedFile(null);
+      setShowUpload(false);
+    } catch (error) {
+      console.error('Error uploading PDF:', error);
+      alert('Failed to upload PDF. Please try again.');
+    } finally {
+      setUploading(false);
+    }
   };
 
   const togglePDF = (pdfId: string) => {
@@ -82,7 +133,7 @@ const HomePage = () => {
 
   const handleSelectAll = () => {
     if (selectedPDFs.length === pdfs.length) {
-      const next = [];
+      const next: string[] = [];
       setSelectedPDFs(next);
       localStorage.setItem('selectedPDFs', JSON.stringify(next));
     } else {
@@ -178,7 +229,7 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* PDF Library - Styled like SourceSelector */}
+      {/* PDF Library */}
       <Card className="shadow-xl border-0 overflow-hidden">
         <CardHeader className="flex-row items-center justify-between bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-indigo-100">
           <div className="flex items-center gap-3">
@@ -215,40 +266,56 @@ const HomePage = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              {pdfs.map((pdf) => {
-                const isSelected = selectedPDFs.includes(pdf.id);
-                return (
-                  <button
-                    key={pdf.id}
-                    onClick={() => togglePDF(pdf.id)}
-                    className={`text-left group p-5 rounded-xl border-2 transition-all duration-300 ${
-                      isSelected
-                        ? 'border-indigo-500 bg-gradient-to-r from-indigo-50 to-purple-50 shadow-lg scale-[1.02]'
-                        : 'border-slate-200 hover:border-indigo-300 hover:shadow-md hover:scale-[1.01]'
-                    }`}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${
-                        isSelected ? 'bg-gradient-to-r from-indigo-600 to-purple-600' : 'bg-slate-100 group-hover:bg-slate-200'
-                      }`}>
-                        <BookOpen className={`h-6 w-6 ${isSelected ? 'text-white' : 'text-slate-600'}`} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-slate-800 truncate">{pdf.name}</p>
-                        <p className="text-xs text-slate-600 mt-1">
-                          {pdf.isSeeded ? 'NCERT' : 'Uploaded'} • {new Date(pdf.uploadedAt).toLocaleDateString()}
-                          {pdf.totalPages ? ` • ${pdf.totalPages} pages` : ''}
-                        </p>
-                      </div>
-                      {isSelected && (
-                        <div className="w-7 h-7 bg-indigo-500 rounded-full flex items-center justify-center flex-shrink-0">
-                          <Check className="w-4 h-4 text-white" />
+                {pdfs.map((pdf) => {
+                  const isSelected = selectedPDFs.includes(pdf.id);
+                  return (
+                    <div
+                      key={pdf.id}
+                      className={`relative p-5 rounded-xl border-2 transition-all duration-300 w-full ${isSelected
+                          ? 'border-indigo-500 bg-gradient-to-r from-indigo-50 to-purple-50 shadow-lg scale-[1.02]'
+                          : 'border-slate-200 hover:border-indigo-300 hover:shadow-md hover:scale-[1.01]'
+                        }`}
+                      onClick={() => togglePDF(pdf.id)}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div
+                          className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${isSelected
+                              ? 'bg-gradient-to-r from-indigo-600 to-purple-600'
+                              : 'bg-slate-100 hover:bg-slate-200'
+                            }`}
+                        >
+                          <BookOpen className={`h-6 w-6 ${isSelected ? 'text-white' : 'text-slate-600'}`} />
                         </div>
-                      )}
+
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-slate-800 truncate">{pdf.name}</p>
+                          <p className="text-xs text-slate-600 mt-1">
+                            {pdf.isSeeded ? 'NCERT' : 'Uploaded'} • {new Date(pdf.uploadedAt).toLocaleDateString()}
+                            {pdf.totalPages ? ` • ${pdf.totalPages} pages` : ''}
+                          </p>
+                        </div>
+
+                        {isSelected && (
+                          <div className="flex items-center gap-2 flex-shrink-0">
+
+                            {/* Trash/Delete Icon */}
+                            <div
+                              onClick={(e) => {
+                                e.stopPropagation(); // prevent toggling selection
+                                handleDeletePDF(pdf.id);
+                              }}
+                              className="w-7 h-7 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center cursor-pointer"
+                              title="Delete PDF"
+                            >
+                              <Trash className="w-4 h-4 text-white" />
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </button>
-                );
-              })}
+                  );
+                })}
+
             </div>
           )}
 
@@ -272,6 +339,15 @@ const HomePage = () => {
           )}
         </CardContent>
       </Card>
+      <ConfirmModal
+        open={confirmOpen}
+        title="Delete PDF?"
+        description="Are you sure you want to delete this PDF? This will also delete associated quizzes and chats."
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setConfirmOpen(false)}
+        confirmText="Delete"
+        cancelText="Cancel"
+      />
 
       {/* Upload Modal */}
       <Dialog open={showUpload} onOpenChange={setShowUpload}>
@@ -282,8 +358,8 @@ const HomePage = () => {
 
           <div
             className={`relative border-2 border-dashed rounded-xl p-12 text-center transition-all duration-300 ${dragActive
-                ? 'border-indigo-500 bg-indigo-50 scale-105'
-                : 'border-slate-300 hover:border-indigo-400 hover:bg-slate-50'
+              ? 'border-indigo-500 bg-indigo-50 scale-105'
+              : 'border-slate-300 hover:border-indigo-400 hover:bg-slate-50'
               }`}
             onDragEnter={handleDrag}
             onDragLeave={handleDrag}
@@ -305,6 +381,7 @@ const HomePage = () => {
                   variant="destructive"
                   size="sm"
                   onClick={() => setSelectedFile(null)}
+                  disabled={uploading}
                 >
                   Remove
                 </Button>
@@ -332,21 +409,34 @@ const HomePage = () => {
               accept="application/pdf"
               onChange={(e) => e.target.files && setSelectedFile(e.target.files[0])}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              disabled={uploading}
             />
           </div>
 
           {selectedFile && (
             <Button
               onClick={handleUpload}
+              disabled={uploading}
               className="w-full text-white mt-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
               size="lg"
             >
-              Upload PDF
+              {uploading ? (
+                <>
+                  <Loader className="h-5 w-5 mr-2 animate-spin" />
+                  Uploading & Processing...
+                </>
+              ) : (
+                <>
+                  <Upload className="h-5 w-5 mr-2" />
+                  Upload PDF
+                </>
+              )}
             </Button>
           )}
         </DialogContent>
       </Dialog>
     </div>
+    
   );
 };
 

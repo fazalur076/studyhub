@@ -1,21 +1,29 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Loader, BookOpen, MessageSquare, Sparkles, AlertCircle } from 'lucide-react';
+import { Send, Loader, BookOpen, MessageSquare, Sparkles, AlertCircle, Trash } from 'lucide-react';
 import { type ChatSession, type ChatMessage } from '../../types';
 import { generateChatResponse } from '../../services/openai.service';
+import { getPDFText, getPDFById, deleteChatSession } from '../../services/storage.service';
+import { chunkText, findRelevantChunks, extractTextFromPDF, extractTextFromURL, type PDFChunk } from '../../services/pdf.service';
 import ChatMessageComponent from './ChatMessage';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
+import ConfirmModal from '../ui/confirmModal';
 
 interface ChatInterfaceProps {
   session: ChatSession;
   onUpdateSession: (session: ChatSession) => void;
+  onDeleteSession: () => void; // Add this prop to handle navigation after delete
 }
 
-const ChatInterface = ({ session, onUpdateSession }: ChatInterfaceProps) => {
+const ChatInterface = ({ session, onUpdateSession, onDeleteSession }: ChatInterfaceProps) => {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [pdfChunks, setPdfChunks] = useState<PDFChunk[]>([]);
+  const [loadingPdfs, setLoadingPdfs] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pdfToDelete, setPdfToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     scrollToBottom();
@@ -24,6 +32,52 @@ const ChatInterface = ({ session, onUpdateSession }: ChatInterfaceProps) => {
   useEffect(() => {
     adjustTextareaHeight();
   }, [input]);
+
+  useEffect(() => {
+    loadPDFContent();
+  }, [session.pdfContext]);
+
+  const loadPDFContent = async () => {
+    setLoadingPdfs(true);
+    const allChunks: PDFChunk[] = [];
+
+    try {
+      for (const pdfId of session.pdfContext) {
+        let pdfText = await getPDFText(pdfId);
+
+        if (!pdfText) {
+          const pdf = await getPDFById(pdfId);
+          if (!pdf) continue;
+
+          console.log(`Extracting text from ${pdf.name}...`);
+
+          if (pdf.file) {
+            pdfText = await extractTextFromPDF(pdf.file);
+          } else if (pdf.url) {
+            pdfText = await extractTextFromURL(pdf.url);
+          }
+
+          if (pdfText) {
+            const { savePDFText } = await import('../../services/storage.service');
+            await savePDFText(pdfId, pdfText);
+          }
+        }
+
+        if (pdfText) {
+          const chunks = chunkText(pdfText, pdfId);
+          allChunks.push(...chunks);
+          console.log(`Loaded ${chunks.length} chunks from PDF ${pdfId}`);
+        }
+      }
+
+      setPdfChunks(allChunks);
+      console.log(`Total chunks loaded: ${allChunks.length}`);
+    } catch (error) {
+      console.error('Error loading PDF content:', error);
+    } finally {
+      setLoadingPdfs(false);
+    }
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -37,8 +91,27 @@ const ChatInterface = ({ session, onUpdateSession }: ChatInterfaceProps) => {
     }
   };
 
+  const handleDeleteChat = () => {
+    setConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!session?.id) return;
+
+    try {
+      await deleteChatSession(session.id);
+      onDeleteSession(); // parent removes this chat from state
+    } catch (error) {
+      console.error('Error deleting chat:', error);
+      alert('Failed to delete chat. Please try again.');
+    } finally {
+      setConfirmOpen(false);
+    }
+  };
+
+
   const handleSendMessage = async () => {
-    if (!input.trim() || loading) return;
+    if (!input.trim() || loading || loadingPdfs) return;
 
     const userMessage: ChatMessage = {
       id: `msg-${Date.now()}`,
@@ -59,17 +132,21 @@ const ChatInterface = ({ session, onUpdateSession }: ChatInterfaceProps) => {
     setLoading(true);
 
     try {
-      const mockRelevantChunks = [
-        {
-          content: 'Sample content from the PDF...',
-          page: 1,
-          pdfId: session.pdfContext[0]
-        }
-      ];
+      const relevantChunks = findRelevantChunks(input, pdfChunks, 5);
+
+      console.log(`Found ${relevantChunks.length} relevant chunks for query:`, input);
+
+      if (relevantChunks.length === 0) {
+        throw new Error('No relevant content found in the PDFs');
+      }
 
       const response = await generateChatResponse({
         message: input,
-        relevantChunks: mockRelevantChunks,
+        relevantChunks: relevantChunks.map(chunk => ({
+          content: chunk.content,
+          page: chunk.page,
+          pdfId: chunk.pdfId
+        })),
         chatHistory: session.messages.slice(-5).map(m => ({
           role: m.role,
           content: m.content
@@ -97,7 +174,9 @@ const ChatInterface = ({ session, onUpdateSession }: ChatInterfaceProps) => {
       const errorMessage: ChatMessage = {
         id: `msg-${Date.now()}`,
         role: 'assistant',
-        content: 'Sorry, I encountered an error processing your request. Please try again.',
+        content: error instanceof Error && error.message.includes('No relevant content')
+          ? "I couldn't find relevant information in your PDFs to answer this question. Please try rephrasing your question or make sure your PDFs contain the information you're looking for."
+          : 'Sorry, I encountered an error processing your request. Please try again.',
         timestamp: new Date()
       };
 
@@ -127,6 +206,20 @@ const ChatInterface = ({ session, onUpdateSession }: ChatInterfaceProps) => {
     "How does this work?"
   ];
 
+  if (loadingPdfs) {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-slate-50">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
+            <BookOpen className="h-8 w-8 text-white" />
+          </div>
+          <p className="text-lg font-semibold text-slate-800 mb-2">Loading your study materials...</p>
+          <p className="text-sm text-slate-600">Extracting text from PDFs</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-full bg-slate-50">
       {/* Header */}
@@ -142,12 +235,25 @@ const ChatInterface = ({ session, onUpdateSession }: ChatInterfaceProps) => {
                 </div>
                 <div className="h-1 w-1 bg-slate-400 rounded-full"></div>
                 <Badge variant="secondary" className="bg-indigo-100 text-indigo-700">
+                  {pdfChunks.length} chunks loaded
+                </Badge>
+                <div className="h-1 w-1 bg-slate-400 rounded-full"></div>
+                <Badge variant="secondary" className="bg-purple-100 text-purple-700">
                   {session.messages.length} message{session.messages.length !== 1 ? 's' : ''}
                 </Badge>
               </div>
             </div>
-            <div className="w-12 h-12 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center">
-              <MessageSquare className="h-6 w-6 text-white" />
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleDeleteChat}
+                className="w-12 h-12 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-xl flex items-center justify-center transition-all duration-300 hover:scale-105"
+                title="Delete chat"
+              >
+                <Trash className="h-6 w-6 text-white" />
+              </button>
+              <div className="w-12 h-12 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center">
+                <MessageSquare className="h-6 w-6 text-white" />
+              </div>
             </div>
           </div>
         </div>
@@ -211,6 +317,16 @@ const ChatInterface = ({ session, onUpdateSession }: ChatInterfaceProps) => {
           <div ref={messagesEndRef} />
         </div>
       </div>
+      
+      <ConfirmModal
+        open={confirmOpen}
+        title="Delete Chat?"
+        description="Are you sure you want to delete this chat? This action cannot be undone."
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setConfirmOpen(false)}
+        confirmText="Delete"
+        cancelText="Cancel"
+      />
 
       {/* Input Area */}
       <div className="border-t-2 border-slate-200 bg-white shadow-lg">
@@ -222,7 +338,7 @@ const ChatInterface = ({ session, onUpdateSession }: ChatInterfaceProps) => {
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Ask a question about your coursebook..."
-              disabled={loading}
+              disabled={loading || loadingPdfs}
               className="w-full p-5 bg-transparent resize-none focus:outline-none text-slate-800 placeholder:text-slate-400"
               rows={1}
               style={{ minHeight: '60px', maxHeight: '200px' }}
@@ -234,12 +350,12 @@ const ChatInterface = ({ session, onUpdateSession }: ChatInterfaceProps) => {
               </div>
               <Button
                 onClick={handleSendMessage}
-                disabled={!input.trim() || loading}
-                className={`bg-gradient-to-r text-white from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 ${input.trim() && !loading ? 'hover:scale-105' : 'opacity-50 cursor-not-allowed'
+                disabled={!input.trim() || loading || loadingPdfs}
+                className={`bg-gradient-to-r text-white from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 ${input.trim() && !loading && !loadingPdfs ? 'hover:scale-105' : 'opacity-50 cursor-not-allowed'
                   }`}
                 size="lg"
               >
-                <Send className=" text-white h-5 w-5 mr-2" />
+                <Send className="text-white h-5 w-5 mr-2" />
                 Send
               </Button>
             </div>

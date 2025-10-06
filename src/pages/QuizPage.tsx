@@ -6,12 +6,13 @@ import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import SourceSelector from '../components/pdf/SourceSelector';
-import { getAllPDFs, getPDFById, saveQuiz, saveQuizAttempt, savePDF } from '../services/storage.service';
+import { getAllPDFs, getPDFById, saveQuiz, saveQuizAttempt, savePDF, deletePDF } from '../services/storage.service';
 import { extractTextFromPDF, getPDFMetadata } from '../services/pdf.service';
 import { generateQuiz } from '../services/openai.service';
 import { type PDF } from '../types';
 import QuizInterface from '../components/quiz/QuizInterface';
 import QuizResults from '../components/quiz/QuizResults';
+import ConfirmModal from '../components/ui/confirmModal';
 
 const QuizPage = () => {
   const navigate = useNavigate();
@@ -28,6 +29,8 @@ const QuizPage = () => {
   const [showUpload, setShowUpload] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pdfToDelete, setPdfToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     if (location.state?.viewMode === 'review') {
@@ -210,6 +213,31 @@ const QuizPage = () => {
     setShowResults(true);
   };
 
+  const handleDeletePDF = (pdfId: string) => {
+    setPdfToDelete(pdfId);
+    setConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!pdfToDelete) return;
+
+    try {
+      await deletePDF(pdfToDelete);
+      const next = selectedPDFs.filter(id => id !== pdfToDelete);
+      setSelectedPDFs(next);
+      localStorage.setItem('selectedPDFs', JSON.stringify(next));
+      await loadPDFs();
+    } catch (error) {
+      console.error('Error deleting PDF:', error);
+      alert('Failed to delete PDF. Please try again.');
+    } finally {
+      setConfirmOpen(false);
+      setPdfToDelete(null);
+    }
+  };
+
+
+
   const quizTypes = [
     { value: 'MCQ', label: 'MCQ', icon: Target, gradient: 'from-blue-500 to-cyan-500' },
     { value: 'SAQ', label: 'SAQ', icon: Zap, gradient: 'from-purple-500 to-pink-500' },
@@ -306,6 +334,7 @@ const QuizPage = () => {
             pdfs={pdfs}
             selectedPDFs={selectedPDFs}
             onSelectionChange={setSelectedPDFs}
+            onDeletePDF={handleDeletePDF}  // pass deletion function
           />
 
           {/* Quiz Type Selection */}
@@ -486,6 +515,16 @@ const QuizPage = () => {
           )}
         </DialogContent>
       </Dialog>
+      
+      <ConfirmModal
+        open={confirmOpen}
+        title="Delete PDF?"
+        description="Are you sure you want to delete this PDF? This will also delete associated quizzes and chats."
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setConfirmOpen(false)}
+        confirmText="Delete"
+        cancelText="Cancel"
+      />
 
       {/* Quick Tips */}
       <Card className="bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-200 shadow-lg">
