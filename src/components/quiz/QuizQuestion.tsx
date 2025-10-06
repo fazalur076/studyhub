@@ -92,8 +92,8 @@ const QuizQuestion = ({
             <div className="space-y-3">
               {question.options.map((option, idx) => {
                 const isSelected = userAnswer === option;
-                const isCorrect = showCorrectAnswer && option === question.correctAnswer;
-                const isWrong = showCorrectAnswer && isSelected && option !== question.correctAnswer;
+                const isCorrect = showCorrectAnswer && option.toLowerCase().trim() === question.correctAnswer.toLowerCase().trim();
+                const isWrong = showCorrectAnswer && isSelected && option.toLowerCase().trim() !== question.correctAnswer.toLowerCase().trim();
 
                 return (
                   <button
@@ -101,22 +101,22 @@ const QuizQuestion = ({
                     onClick={() => !showCorrectAnswer && onAnswerSelect(option)}
                     disabled={showCorrectAnswer}
                     className={`w-full text-left p-5 rounded-xl border-2 font-medium transition-all duration-300 group ${isCorrect
-                        ? 'border-green-500 bg-gradient-to-r from-green-50 to-emerald-50 shadow-lg'
-                        : isWrong
-                          ? 'border-red-500 bg-gradient-to-r from-red-50 to-rose-50 shadow-lg'
-                          : isSelected
-                            ? 'border-indigo-500 bg-gradient-to-r from-indigo-50 to-purple-50 shadow-md scale-[1.02]'
-                            : 'border-slate-200 hover:border-indigo-300 hover:bg-slate-50 hover:shadow-md hover:scale-[1.01]'
+                      ? 'border-green-500 bg-gradient-to-r from-green-50 to-emerald-50 shadow-lg'
+                      : isWrong
+                        ? 'border-red-500 bg-gradient-to-r from-red-50 to-rose-50 shadow-lg'
+                        : isSelected
+                          ? 'border-indigo-500 bg-gradient-to-r from-indigo-50 to-purple-50 shadow-md scale-[1.02]'
+                          : 'border-slate-200 hover:border-indigo-300 hover:bg-slate-50 hover:shadow-md hover:scale-[1.01]'
                       } ${showCorrectAnswer ? 'cursor-default' : 'cursor-pointer'}`}
                   >
                     <div className="flex items-center gap-4">
                       <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all duration-300 ${isCorrect
-                          ? 'border-green-500 bg-green-500'
-                          : isWrong
-                            ? 'border-red-500 bg-red-500'
-                            : isSelected
-                              ? 'border-indigo-500 bg-indigo-500'
-                              : 'border-slate-300 group-hover:border-indigo-400'
+                        ? 'border-green-500 bg-green-500'
+                        : isWrong
+                          ? 'border-red-500 bg-red-500'
+                          : isSelected
+                            ? 'border-indigo-500 bg-indigo-500'
+                            : 'border-slate-300 group-hover:border-indigo-400'
                         }`}>
                         {(isSelected || isCorrect) && (
                           <svg className="w-4 h-4 text-white" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" viewBox="0 0 24 24" stroke="currentColor">
@@ -125,8 +125,8 @@ const QuizQuestion = ({
                         )}
                       </div>
                       <span className={`flex-1 ${isCorrect || isWrong || isSelected
-                          ? 'text-slate-800'
-                          : 'text-slate-700 group-hover:text-slate-900'
+                        ? 'text-slate-800'
+                        : 'text-slate-700 group-hover:text-slate-900'
                         }`}>
                         {option}
                       </span>

@@ -11,7 +11,6 @@ const Layout = () => {
     { path: '/quiz', icon: FileText, label: 'Quiz' },
     { path: '/chat', icon: MessageSquare, label: 'Chat' },
     { path: '/profile', icon: UserRound, label: 'Profile' },
-    { path: '/history', icon: UserRound, label: 'History' },    
   ];
 
   return (
