@@ -35,13 +35,11 @@ export interface QuizAttempt {
   id: string;
   quizId: string;
   pdfId: string;
-  answers: Record<string, string>;
   score: number;
   maxScore: number;
-  completedAt: Date;
-  timeSpent: number;
   correctAnswers: string[];
-  incorrectAnswers: string[];
+  userAnswers: Record<string, string>;
+  completedAt: Date;
 }
 
 export interface UserProgress {

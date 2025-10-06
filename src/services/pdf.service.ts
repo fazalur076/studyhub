@@ -1,6 +1,5 @@
 import * as pdfjsLib from 'pdfjs-dist';
 
-// Configure worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 /**

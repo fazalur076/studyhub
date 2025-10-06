@@ -125,13 +125,13 @@ const QuizInterface = ({
               Cancel Quiz
             </Button>
             <Button
-              className={`flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 ${allAnswered ? 'hover:scale-[1.02]' : 'opacity-50 cursor-not-allowed'
+              className={`flex-1 text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 ${allAnswered ? 'hover:scale-[1.02]' : 'opacity-50 cursor-not-allowed'
                 }`}
               onClick={onSubmit}
               disabled={!allAnswered}
               size="lg"
             >
-              <Send className="h-5 w-5 mr-2" />
+              <Send className="text-white h-5 w-5 mr-2" />
               Submit Quiz
             </Button>
           </div>

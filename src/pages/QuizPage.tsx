@@ -1,18 +1,20 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Play, RefreshCw, Loader, Sparkles, Zap, Target, BookOpen } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import SourceSelector from '../components/pdf/SourceSelector';
-import { getAllPDFs } from '../services/storage.service';
+import { getAllPDFs, getPDFById, saveQuiz, saveQuizAttempt } from '../services/storage.service';
+import { extractTextFromPDF } from '../services/pdf.service';
+import { generateQuiz } from '../services/openai.service';
 import { type PDF } from '../types';
-
-const QuizInterface = ({ quiz, answers, onAnswerChange, onSubmit, onCancel }) => <div>Quiz Interface</div>;
-const QuizResults = ({ quiz, attempt, userAnswers, onNewQuiz }) => <div>Results</div>;
+import QuizInterface from '../components/quiz/QuizInterface';
+import QuizResults from '../components/quiz/QuizResults';
 
 const QuizPage = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [pdfs, setPdfs] = useState<PDF[]>([]);
   const [selectedPDFs, setSelectedPDFs] = useState<string[]>([]);
   const [quizType, setQuizType] = useState('MCQ');
@@ -23,18 +25,123 @@ const QuizPage = () => {
   const [showResults, setShowResults] = useState(false);
   const [quizAttempt, setQuizAttempt] = useState(null);
 
+  useEffect(() => {
+    if (location.state?.viewMode === 'review') {
+      setCurrentQuiz(location.state.quiz);
+      setQuizAttempt(location.state.attempt);
+      setAnswers(location.state.userAnswers || {});
+      setShowResults(true);
+    }
+  }, [location.state]);
+
   const handleGenerateQuiz = async () => {
     if (selectedPDFs.length === 0) {
       alert('Please select at least one PDF');
       return;
     }
+    
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
+    
+    try {
+      let allText = '';
+      
+      for (const pdfId of selectedPDFs) {
+        const pdf = await getPDFById(pdfId);
+        if (!pdf) continue;
+        
+        let pdfText = '';
+        
+        if (pdf.url && !pdf.file) {
+          const response = await fetch(pdf.url);
+          const blob = await response.blob();
+          const file = new File([blob], pdf.name, { type: 'application/pdf' });
+          pdfText = await extractTextFromPDF(file);
+        } else if (pdf.file) {
+          pdfText = await extractTextFromPDF(pdf.file);
+        }
+        
+        allText += pdfText + '\n\n';
+      }
+      
+      if (!allText.trim()) {
+        throw new Error('No text extracted from PDFs');
+      }
+      
+      console.log('Extracted text length:', allText.length);
+      
+      const questions = await generateQuiz({
+        pdfContent: allText,
+        quizType: quizType as any,
+        numQuestions: numQuestions,
+        difficulty: 'medium'
+      });
+      
+      console.log('Generated questions:', questions);
+      
+      if (!questions || questions.length === 0) {
+        throw new Error('No questions generated');
+      }
+      
+      const newQuiz = {
+        id: `quiz-${Date.now()}`,
+        pdfId: selectedPDFs[0],
+        type: quizType as any,
+        questions: questions.map((q, idx) => ({
+          ...q,
+          id: `q-${Date.now()}-${idx}`
+        })),
+        createdAt: new Date()
+      };
+      
+      console.log('Created quiz object:', newQuiz);
+      
+      await saveQuiz(newQuiz);
+      setCurrentQuiz(newQuiz);
+      setAnswers({});
+      
+    } catch (error) {
+      console.error('Quiz generation error:', error);
+      alert(`Failed to generate quiz: ${error.message}`);
+    } finally {
       setLoading(false);
-      // Would set currentQuiz here
-    }, 2000);
+    }
   };
+
+  const handleQuizSubmit = async () => {
+    if (!currentQuiz) return;
+    
+    let score = 0;
+    const correctAnswers: string[] = [];
+    
+    currentQuiz.questions.forEach(question => {
+      const userAnswer = answers[question.id]?.toLowerCase().trim();
+      const correctAnswer = question.correctAnswer.toLowerCase().trim();
+      
+      if (userAnswer === correctAnswer) {
+        score++;
+        correctAnswers.push(question.id);
+      }
+    });
+    
+    const attempt = {
+      id: `attempt-${Date.now()}`,
+      quizId: currentQuiz.id,
+      pdfId: currentQuiz.pdfId,
+      score,
+      maxScore: currentQuiz.questions.length,
+      correctAnswers,
+      userAnswers: answers,
+      completedAt: new Date()
+    };
+    
+    console.log('Quiz attempt:', attempt);
+    
+    await saveQuizAttempt(attempt);
+    
+    setQuizAttempt(attempt);
+    setShowResults(true);
+  };
+
   useEffect(() => {
     void (async () => {
       const all = await getAllPDFs();
@@ -44,6 +151,14 @@ const QuizPage = () => {
     })();
   }, []);
 
+  useEffect(() => {
+    if (location.state?.viewMode === 'review') {
+      setCurrentQuiz(location.state.quiz);
+      setQuizAttempt(location.state.attempt);
+      setAnswers(location.state.userAnswers || {});
+      setShowResults(true);
+    }
+  }, [location.state]);
 
   const quizTypes = [
     { value: 'MCQ', label: 'MCQ', icon: Target, gradient: 'from-blue-500 to-cyan-500' },
@@ -62,26 +177,32 @@ const QuizPage = () => {
           setCurrentQuiz(null);
           setShowResults(false);
           setQuizAttempt(null);
+          setAnswers({});
+          navigate('/quiz', { replace: true });
         }}
       />
     );
   }
 
-  if (currentQuiz) {
+  if (currentQuiz && !showResults) {
     return (
       <QuizInterface
         quiz={currentQuiz}
         answers={answers}
         onAnswerChange={setAnswers}
-        onSubmit={() => setShowResults(true)}
-        onCancel={() => setCurrentQuiz(null)}
+        onSubmit={handleQuizSubmit}
+        onCancel={() => {
+          setCurrentQuiz(null);
+          setAnswers({});
+          navigate('/quiz', { replace: true });
+        }}
       />
     );
   }
 
   return (
     <div className="space-y-8">
-      {/* Hero Section - align gradient with HomePage */}
+      {/* Hero Section */}
       <div className="relative overflow-hidden bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 rounded-3xl shadow-2xl p-12">
         <div className="absolute inset-0 bg-black/10"></div>
         <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
@@ -138,14 +259,16 @@ const QuizPage = () => {
                   <Card
                     key={type.value}
                     onClick={() => setQuizType(type.value)}
-                    className={`cursor-pointer transition-all duration-300 border-2 ${isSelected
+                    className={`cursor-pointer transition-all duration-300 border-2 ${
+                      isSelected
                         ? 'border-indigo-500 shadow-lg scale-105'
                         : 'border-slate-200 hover:border-indigo-300 hover:shadow-md'
-                      }`}
+                    }`}
                   >
                     <CardContent className="p-6 text-center">
-                      <div className={`w-14 h-14 bg-gradient-to-r ${type.gradient} rounded-xl flex items-center justify-center mx-auto mb-3 ${isSelected ? 'scale-110' : ''
-                        } transition-transform duration-300`}>
+                      <div className={`w-14 h-14 bg-gradient-to-r ${type.gradient} rounded-xl flex items-center justify-center mx-auto mb-3 ${
+                        isSelected ? 'scale-110' : ''
+                      } transition-transform duration-300`}>
                         <Icon className="h-7 w-7 text-white" />
                       </div>
                       <h4 className="font-bold text-slate-800 mb-1">{type.label}</h4>

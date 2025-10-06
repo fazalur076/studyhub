@@ -184,19 +184,19 @@ const QuizResults = ({ quiz, attempt, userAnswers, onNewQuiz }: QuizResultsProps
             <Button
               onClick={onNewQuiz}
               size="lg"
-              className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
+              className="flex-1 text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
             >
-              <RefreshCw className="h-5 w-5 mr-2" />
+              <RefreshCw className="text-white h-5 w-5 mr-2" />
               Generate New Quiz
             </Button>
             <Button
               variant="outline"
               size="lg"
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate('/profile')}
               className="flex-1 border-2 border-indigo-300 hover:bg-indigo-50 hover:border-indigo-400 transition-all duration-300"
             >
               <BarChart3 className="h-5 w-5 mr-2" />
-              View Dashboard
+              View Profile
             </Button>
             <Button
               variant="outline"
