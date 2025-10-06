@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Play, RefreshCw, Loader, Sparkles, Zap, Target, BookOpen } from 'lucide-react';
+import { Play, RefreshCw, Loader, Sparkles, Zap, Target, BookOpen, Upload } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import SourceSelector from '../components/pdf/SourceSelector';
-import { getAllPDFs, getPDFById, saveQuiz, saveQuizAttempt } from '../services/storage.service';
-import { extractTextFromPDF } from '../services/pdf.service';
+import { getAllPDFs, getPDFById, saveQuiz, saveQuizAttempt, savePDF } from '../services/storage.service';
+import { extractTextFromPDF, getPDFMetadata } from '../services/pdf.service';
 import { generateQuiz } from '../services/openai.service';
 import { type PDF } from '../types';
 import QuizInterface from '../components/quiz/QuizInterface';
@@ -24,6 +25,9 @@ const QuizPage = () => {
   const [answers, setAnswers] = useState({});
   const [showResults, setShowResults] = useState(false);
   const [quizAttempt, setQuizAttempt] = useState(null);
+  const [showUpload, setShowUpload] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (location.state?.viewMode === 'review') {
@@ -33,6 +37,70 @@ const QuizPage = () => {
       setShowResults(true);
     }
   }, [location.state]);
+
+  const loadPDFs = async () => {
+    const all = await getAllPDFs();
+    setPdfs(all);
+  };
+
+  useEffect(() => {
+    void (async () => {
+      await loadPDFs();
+      const stored = localStorage.getItem('selectedPDFs');
+      if (stored) setSelectedPDFs(JSON.parse(stored));
+    })();
+  }, []);
+
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      setSelectedFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!selectedFile) return;
+    const id = `pdf-${Date.now()}`;
+    const meta = await getPDFMetadata(selectedFile);
+    const url = URL.createObjectURL(selectedFile);
+    const newPDF: PDF = {
+      id,
+      name: selectedFile.name,
+      file: selectedFile,
+      url,
+      uploadedAt: new Date(),
+      totalPages: meta.numPages || 0,
+      isSeeded: false,
+    };
+    await savePDF(newPDF);
+    await loadPDFs();
+    setSelectedFile(null);
+    setShowUpload(false);
+  };
+
+  const handleSelectAll = () => {
+    if (selectedPDFs.length === pdfs.length) {
+      const next = [];
+      setSelectedPDFs(next);
+      localStorage.setItem('selectedPDFs', JSON.stringify(next));
+    } else {
+      const next = pdfs.map(p => p.id);
+      setSelectedPDFs(next);
+      localStorage.setItem('selectedPDFs', JSON.stringify(next));
+    }
+  };
 
   const handleGenerateQuiz = async () => {
     if (selectedPDFs.length === 0) {
@@ -142,24 +210,6 @@ const QuizPage = () => {
     setShowResults(true);
   };
 
-  useEffect(() => {
-    void (async () => {
-      const all = await getAllPDFs();
-      setPdfs(all);
-      const stored = localStorage.getItem('selectedPDFs');
-      if (stored) setSelectedPDFs(JSON.parse(stored));
-    })();
-  }, []);
-
-  useEffect(() => {
-    if (location.state?.viewMode === 'review') {
-      setCurrentQuiz(location.state.quiz);
-      setQuizAttempt(location.state.attempt);
-      setAnswers(location.state.userAnswers || {});
-      setShowResults(true);
-    }
-  }, [location.state]);
-
   const quizTypes = [
     { value: 'MCQ', label: 'MCQ', icon: Target, gradient: 'from-blue-500 to-cyan-500' },
     { value: 'SAQ', label: 'SAQ', icon: Zap, gradient: 'from-purple-500 to-pink-500' },
@@ -224,14 +274,29 @@ const QuizPage = () => {
 
       {/* Quiz Configuration Card */}
       <Card className="shadow-xl border-0 overflow-hidden">
-        <CardHeader className="bg-gradient-to-r border-b border-indigo-100">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center">
-              <Sparkles className="h-6 w-6 text-white" />
+        <CardHeader className="bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-indigo-100">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center">
+                <Sparkles className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <CardTitle className="text-2xl">Quiz Configuration</CardTitle>
+                <p className="text-slate-600 text-sm mt-1">Customize your learning experience</p>
+              </div>
             </div>
-            <div>
-              <CardTitle className="text-2xl">Quiz Configuration</CardTitle>
-              <p className="text-slate-600 text-sm mt-1">Customize your learning experience</p>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={() => setShowUpload(true)}
+                className="bg-gradient-to-r text-white from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                size="sm"
+              >
+                <Upload className="h-4 w-4 mr-1" />
+                Upload
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleSelectAll} className="border-2 hover:bg-slate-50">
+                {selectedPDFs.length === pdfs.length ? 'Deselect All' : 'Select All'}
+              </Button>
             </div>
           </div>
         </CardHeader>
@@ -346,6 +411,81 @@ const QuizPage = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Upload Modal */}
+      <Dialog open={showUpload} onOpenChange={setShowUpload}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">Upload PDF</DialogTitle>
+          </DialogHeader>
+
+          <div
+            className={`relative border-2 border-dashed rounded-xl p-12 text-center transition-all duration-300 ${
+              dragActive
+                ? 'border-indigo-500 bg-indigo-50 scale-105'
+                : 'border-slate-300 hover:border-indigo-400 hover:bg-slate-50'
+            }`}
+            onDragEnter={handleDrag}
+            onDragLeave={handleDrag}
+            onDragOver={handleDrag}
+            onDrop={handleDrop}
+          >
+            {selectedFile ? (
+              <div className="space-y-4">
+                <div className="w-16 h-16 bg-indigo-100 rounded-xl flex items-center justify-center mx-auto">
+                  <BookOpen className="h-8 w-8 text-indigo-600" />
+                </div>
+                <div>
+                  <p className="font-semibold text-slate-800">{selectedFile.name}</p>
+                  <p className="text-sm text-slate-500 mt-1">
+                    {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                  </p>
+                </div>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setSelectedFile(null)}
+                >
+                  Remove
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="w-16 h-16 bg-slate-100 rounded-xl flex items-center justify-center mx-auto">
+                  <Upload className="h-8 w-8 text-slate-400" />
+                </div>
+                <div>
+                  <p className="text-slate-800 font-medium text-lg">
+                    Drop your PDF here
+                  </p>
+                  <p className="text-slate-500 text-sm mt-2">
+                    or click to browse
+                  </p>
+                  <p className="text-slate-400 text-xs mt-2">
+                    PDF files up to 50MB
+                  </p>
+                </div>
+              </div>
+            )}
+            <input
+              type="file"
+              accept="application/pdf"
+              onChange={(e) => e.target.files && setSelectedFile(e.target.files[0])}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            />
+          </div>
+
+          {selectedFile && (
+            <Button
+              onClick={handleUpload}
+              className="w-full text-white mt-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+              size="lg"
+            >
+              Upload PDF
+            </Button>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Quick Tips */}
       <Card className="bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-200 shadow-lg">

@@ -141,34 +141,34 @@ export const deleteChatSession = async (id: string): Promise<void> => {
 };
 
 // Seed NCERT PDFs
-export const seedNCERTPDFs = async (): Promise<void> => {
-  const ncertPDFs: PDF[] = [
-    {
-      id: 'ncert-physics-11-1',
-      name: 'NCERT Class XI Physics - Part 1',
-      file: null,
-      url: 'https://ncert.nic.in/textbook/pdf/keph101.pdf',
-      uploadedAt: new Date(),
-      totalPages: 0,
-      isSeeded: true
-    },
-    {
-      id: 'ncert-physics-11-2',
-      name: 'NCERT Class XI Physics - Part 2',
-      file: null,
-      url: 'https://ncert.nic.in/textbook/pdf/keph201.pdf',
-      uploadedAt: new Date(),
-      totalPages: 0,
-      isSeeded: true
-    }
-  ];
+// export const seedNCERTPDFs = async (): Promise<void> => {
+//   const ncertPDFs: PDF[] = [
+//     {
+//       id: 'ncert-physics-11-1',
+//       name: 'NCERT Class XI Physics - Part 1',
+//       file: null,
+//       url: 'https://ncert.nic.in/textbook/pdf/keph101.pdf',
+//       uploadedAt: new Date(),
+//       totalPages: 0,
+//       isSeeded: true
+//     },
+//     {
+//       id: 'ncert-physics-11-2',
+//       name: 'NCERT Class XI Physics - Part 2',
+//       file: null,
+//       url: 'https://ncert.nic.in/textbook/pdf/keph201.pdf',
+//       uploadedAt: new Date(),
+//       totalPages: 0,
+//       isSeeded: true
+//     }
+//   ];
 
-  for (const pdf of ncertPDFs) {
-    const existing = await getPDFById(pdf.id);
-    if (!existing) {
-      await savePDF(pdf);
-    }
-  }
-};
+//   for (const pdf of ncertPDFs) {
+//     const existing = await getPDFById(pdf.id);
+//     if (!existing) {
+//       await savePDF(pdf);
+//     }
+//   }
+// };
 
 export default db;

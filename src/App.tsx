@@ -6,13 +6,8 @@ import QuizPage from './pages/QuizPage';
 import ChatPage from './pages/ChatPage';
 import ProfilePage from './pages/ProfilePage';
 import QuizHistory from './pages/QuizHistory';
-import { seedNCERTPDFs } from './services/storage.service';
 
 function App() {
-  useEffect(() => {
-    // Seed NCERT PDFs on first load
-    seedNCERTPDFs();
-  }, []);
 
   return (
     <BrowserRouter>
