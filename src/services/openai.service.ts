@@ -92,11 +92,6 @@ export const generateQuiz = async (
     });
 
     const result = JSON.parse(response.choices[0].message.content || '{}');
-    const filtered = (result.questions || []).filter(
-      q => q.question && !/question\s*\d+/i.test(q.question)
-    );
-    return filtered;
-
     return result.questions || [];
   } catch (error: any) {
     console.error('Error generating quiz:', error);
