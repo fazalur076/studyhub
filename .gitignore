@@ -28,3 +28,4 @@ env
 *.sln
 *.sw?
 .env
+content
