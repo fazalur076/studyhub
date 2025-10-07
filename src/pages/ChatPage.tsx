@@ -9,6 +9,7 @@ import { Card, CardContent } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { v4 as uuidv4 } from 'uuid';
+import { toast } from 'sonner';
 
 const ChatPage = () => {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
@@ -49,7 +50,7 @@ const ChatPage = () => {
 
   const handleStartChat = async () => {
     if (selectedPDFs.length === 0) {
-      alert('Please select at least one PDF');
+      toast.info('Please select at least one PDF');
       return;
     }
     localStorage.setItem('selectedPDFs', JSON.stringify(selectedPDFs));
@@ -98,7 +99,7 @@ const ChatPage = () => {
       console.log('Chat deleted successfully, UI updated');
     } catch (error) {
       console.error('Failed to delete chat', error);
-      alert('Failed to delete chat. See console for details.');
+      toast.error('Failed to delete chat. See console for details.');
     }
   };
 

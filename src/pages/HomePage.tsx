@@ -8,6 +8,7 @@ import { savePDF, savePDFText, getAllPDFs, deletePDF, uploadPDFFile } from '../s
 import { getPDFMetadata, extractTextFromPDF } from '../services/pdf.service';
 import { type PDF } from '../types';
 import { Check } from 'lucide-react';
+import { toast } from 'sonner';
 import ConfirmModal from '../components/ui/confirmModal';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -68,7 +69,7 @@ const HomePage = () => {
       await loadPDFs();
     } catch (error) {
       console.error('Error deleting PDF:', error);
-      alert('Failed to delete PDF. Please try again.');
+      toast.error('Failed to delete PDF. Please try again.');
     } finally {
       setConfirmOpen(false);
       setPdfToDelete(null);
@@ -112,7 +113,7 @@ const HomePage = () => {
       setShowUpload(false);
     } catch (error) {
       console.error('Error uploading PDF:', error);
-      alert('Failed to upload PDF. Please try again.');
+      toast.error('Failed to upload PDF. Please try again.');
     } finally {
       setUploading(false);
     }

@@ -14,6 +14,7 @@ import QuizInterface from '../components/quiz/QuizInterface';
 import QuizResults from '../components/quiz/QuizResults';
 import ConfirmModal from '../components/ui/confirmModal';
 import { v4 as uuidv4 } from 'uuid';
+import { toast } from 'sonner';
 
 const QuizPage = () => {
   const navigate = useNavigate();
@@ -111,7 +112,7 @@ const QuizPage = () => {
       setShowUpload(false);
     } catch (error) {
       console.error('Error uploading PDF:', error);
-      alert('Failed to upload PDF. Please try again.');
+      toast.error('Failed to upload PDF. Please try again.');
     }
   };
 
@@ -129,7 +130,7 @@ const QuizPage = () => {
 
   const handleGenerateQuiz = async () => {
     if (selectedPDFs.length === 0) {
-      alert('Please select at least one PDF');
+      toast.info('Please select at least one PDF');
       return;
     }
 
@@ -193,7 +194,7 @@ const QuizPage = () => {
       setAnswers({});
     } catch (error: any) {
       console.error('Quiz generation error:', error);
-      alert(`Failed to generate quiz: ${error.message}`);
+      toast.error(`Failed to generate quiz: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -250,7 +251,7 @@ const QuizPage = () => {
       await loadPDFs();
     } catch (error) {
       console.error('Error deleting PDF:', error);
-      alert('Failed to delete PDF. Please try again.');
+      toast.error('Failed to delete PDF. Please try again.');
     } finally {
       setConfirmOpen(false);
       setPdfToDelete(null);

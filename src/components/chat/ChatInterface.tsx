@@ -9,6 +9,7 @@ import PDFViewer from '../pdf/PDFViewer';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import ConfirmModal from '../ui/confirmModal';
+import toast from 'sonner';
 
 interface ChatInterfaceProps {
   session: ChatSession;
@@ -111,7 +112,7 @@ const ChatInterface = ({ session, onUpdateSession, onDeleteSession }: ChatInterf
       onDeleteSession();
     } catch (error) {
       console.error('Error deleting chat:', error);
-      alert('Failed to delete chat. Please try again.');
+      toast.error('Failed to delete chat. Please try again.');
     } finally {
       setConfirmOpen(false);
     }

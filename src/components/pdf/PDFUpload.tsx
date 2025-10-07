@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { Upload, X, File } from 'lucide-react';
 import { Button } from '../ui/button';
+import { toast } from 'sonner';
 
 interface PDFUploadProps {
   onUpload: (file: File) => void;
@@ -32,7 +33,7 @@ const PDFUpload = ({ onUpload, onClose }: PDFUploadProps) => {
       if (file.type === 'application/pdf') {
         setSelectedFile(file);
       } else {
-        alert('Please upload a PDF file');
+        toast.info('Please upload a PDF file');
       }
     }
   };
@@ -43,7 +44,7 @@ const PDFUpload = ({ onUpload, onClose }: PDFUploadProps) => {
       if (file.type === 'application/pdf') {
         setSelectedFile(file);
       } else {
-        alert('Please upload a PDF file');
+        toast.info('Please upload a PDF file');
       }
     }
   };
