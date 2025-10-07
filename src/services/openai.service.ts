@@ -48,18 +48,19 @@ Requirements:
 4. Identify the topic/concept being tested
 5. For MCQs, ensure distractors are plausible
 
-Return the response as a JSON object with this structure:
+Return the response as a **valid JSON object**, strictly following this example format (do not include comments):
+
 {
   "questions": [
     {
-      "type": "MCQ" | "SAQ" | "LAQ",
-      "question": "question text",
-      "options": ["A", "B", "C", "D"],
-      "correctAnswer": "correct answer text",
-      "explanation": "detailed explanation",
-      "topic": "specific topic name",
+      "type": "MCQ",
+      "question": "What is the main function of mitochondria in a cell?",
+      "options": ["A) Protein synthesis", "B) Energy production", "C) DNA replication", "D) Photosynthesis"],
+      "correctAnswer": "B) Energy production",
+      "explanation": "Mitochondria are known as the powerhouse of the cell because they generate ATP.",
+      "topic": "Cell Biology",
       "difficulty": "${difficulty}",
-      "pageReference": page_number
+      "pageReference": 12
     }
   ]
 }
@@ -91,6 +92,11 @@ export const generateQuiz = async (
     });
 
     const result = JSON.parse(response.choices[0].message.content || '{}');
+    const filtered = (result.questions || []).filter(
+      q => q.question && !/question\s*\d+/i.test(q.question)
+    );
+    return filtered;
+
     return result.questions || [];
   } catch (error: any) {
     console.error('Error generating quiz:', error);

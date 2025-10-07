@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Play, RefreshCw, Loader, Sparkles, Zap, Target, BookOpen, Upload } from 'lucide-react';
+import { Play, RefreshCw, Loader, Sparkles, Zap, Target, BookOpen, Upload, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -13,6 +13,7 @@ import { type PDF } from '../types';
 import QuizInterface from '../components/quiz/QuizInterface';
 import QuizResults from '../components/quiz/QuizResults';
 import ConfirmModal from '../components/ui/confirmModal';
+import { v4 as uuidv4 } from 'uuid';
 
 const QuizPage = () => {
   const navigate = useNavigate();
@@ -86,7 +87,7 @@ const QuizPage = () => {
       console.log('Extracting text from PDF...');
       const pdfText = await extractTextFromPDF(selectedFile);
 
-      const id = crypto.randomUUID();
+      const id = uuidv4();
 
       const newPDF: PDF = {
         id,
@@ -181,12 +182,12 @@ const QuizPage = () => {
       }
 
       const newQuiz = {
-        id: crypto.randomUUID(),
+        id: uuidv4(),
         pdfId: selectedPDFs[0],
         type: quizType as any,
         questions: questions.map((q, idx) => ({
           ...q,
-          id: crypto.randomUUID()
+          id: uuidv4(),
         })),
         createdAt: new Date().toISOString()
       };
@@ -222,7 +223,7 @@ const QuizPage = () => {
     });
 
     const attempt = {
-      id: crypto.randomUUID(),
+      id: uuidv4(),
       quizId: currentQuiz.id,
       pdfId: currentQuiz.pdfId,
       score,
@@ -471,8 +472,15 @@ const QuizPage = () => {
       {/* Upload Modal */}
       <Dialog open={showUpload} onOpenChange={setShowUpload}>
         <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
+          <DialogHeader className="relative">
             <DialogTitle className="text-2xl">Upload PDF</DialogTitle>
+            <button
+              onClick={() => setShowUpload(false)}
+              className="absolute top-3 right-3 text-slate-500 hover:text-slate-700 transition-colors"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </DialogHeader>
 
           <div

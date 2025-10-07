@@ -9,6 +9,7 @@ import { getPDFMetadata, extractTextFromPDF } from '../services/pdf.service';
 import { type PDF } from '../types';
 import { Check } from 'lucide-react';
 import ConfirmModal from '../components/ui/confirmModal';
+import { v4 as uuidv4 } from 'uuid';
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -86,7 +87,7 @@ const HomePage = () => {
       const meta = await getPDFMetadata(selectedFile);
       console.log('Extracting text from PDF...');
       const pdfText = await extractTextFromPDF(selectedFile);
-      const id = crypto.randomUUID();
+      const id = uuidv4();
       const newPDF: PDF = {
         id,
         name: selectedFile.name,
@@ -350,8 +351,15 @@ const HomePage = () => {
       {/* Upload Modal */}
       <Dialog open={showUpload} onOpenChange={setShowUpload}>
         <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
+          <DialogHeader className="relative">
             <DialogTitle className="text-2xl">Upload PDF</DialogTitle>
+            <button
+              onClick={() => setShowUpload(false)}
+              className="absolute top-3 right-3 text-slate-500 hover:text-slate-700 transition-colors"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </DialogHeader>
 
           <div

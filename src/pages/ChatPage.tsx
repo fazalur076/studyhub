@@ -8,6 +8,7 @@ import ChatInterface from '../components/chat/ChatInterface';
 import { Card, CardContent } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
+import { v4 as uuidv4 } from 'uuid';
 
 const ChatPage = () => {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
@@ -54,7 +55,7 @@ const ChatPage = () => {
     localStorage.setItem('selectedPDFs', JSON.stringify(selectedPDFs));
 
     const newSession: ChatSession = {
-      id: crypto.randomUUID(),
+      id: uuidv4(),
       title: 'New Chat',
       messages: [],
       pdfContext: selectedPDFs,

@@ -9,24 +9,44 @@ export interface PDFChunk {
   pdfId: string;
 }
 
+const cleanPDFText = (text: string): string => {
+  return text
+    .replace(/\n\s*\n/g, '\n')
+    .replace(/Page\s*\d+/gi, '')
+    .replace(/\[?Page\s*\d+\]?/gi, '')
+    .replace(/(Table of Contents|Acknowledgement|Certificate|Index|References|Content Organisation).*/gi, '')
+    .replace(/[^\w\s.,;:()'%-]/g, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+};
+
+const isRelevantText = (text: string): boolean => {
+  const irrelevantPatterns = /(acknowledge|certificate|table of contents|record|content organisation|signature|index|date|student name|guide name)/i;
+  return text.length > 200 && !irrelevantPatterns.test(text);
+};
+
+const extractTextFromPDFDoc = async (pdf: any): Promise<string> => {
+  let fullText = '';
+
+  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+    const page = await pdf.getPage(pageNum);
+    const textContent = await page.getTextContent();
+    const pageText = textContent.items.map((item: any) => item.str).join(' ');
+
+    const cleaned = cleanPDFText(pageText);
+    if (isRelevantText(cleaned)) {
+      fullText += `\n[Page ${pageNum}]\n${cleaned}\n`;
+    }
+  }
+
+  return fullText;
+};
+
 export const extractTextFromPDF = async (file: File): Promise<string> => {
   try {
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-
-    let fullText = '';
-
-    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-      const page = await pdf.getPage(pageNum);
-      const textContent = await page.getTextContent();
-      const pageText = textContent.items
-        .map((item: any) => item.str)
-        .join(' ');
-
-      fullText += `\n[Page ${pageNum}]\n${pageText}\n`;
-    }
-
-    return fullText;
+    return await extractTextFromPDFDoc(pdf);
   } catch (error) {
     console.error('Error extracting PDF text:', error);
     throw new Error('Failed to extract text from PDF');
@@ -36,20 +56,7 @@ export const extractTextFromPDF = async (file: File): Promise<string> => {
 export const extractTextFromURL = async (url: string): Promise<string> => {
   try {
     const pdf = await pdfjsLib.getDocument(url).promise;
-
-    let fullText = '';
-
-    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-      const page = await pdf.getPage(pageNum);
-      const textContent = await page.getTextContent();
-      const pageText = textContent.items
-        .map((item: any) => item.str)
-        .join(' ');
-
-      fullText += `\n[Page ${pageNum}]\n${pageText}\n`;
-    }
-
-    return fullText;
+    return await extractTextFromPDFDoc(pdf);
   } catch (error) {
     console.error('Error extracting PDF text from URL:', error);
     throw new Error('Failed to extract text from PDF URL');
@@ -66,20 +73,7 @@ export const extractTextFromSupabasePDF = async (fileName: string): Promise<stri
 
     const arrayBuffer = await data.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-
-    let fullText = '';
-
-    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-      const page = await pdf.getPage(pageNum);
-      const textContent = await page.getTextContent();
-      const pageText = textContent.items
-        .map((item: any) => item.str)
-        .join(' ');
-
-      fullText += `\n[Page ${pageNum}]\n${pageText}\n`;
-    }
-
-    return fullText;
+    return await extractTextFromPDFDoc(pdf);
   } catch (error) {
     console.error('Error extracting text from Supabase PDF:', error);
     throw new Error('Failed to extract text from Supabase PDF');
@@ -99,7 +93,7 @@ export const getPDFMetadata = async (file: File): Promise<{
     return {
       numPages: pdf.numPages,
       title: metadata.info?.Title,
-      author: metadata.info?.Author
+      author: metadata.info?.Author,
     };
   } catch (error) {
     console.error('Error getting PDF metadata:', error);
@@ -119,7 +113,7 @@ export const getPDFMetadataFromURL = async (url: string): Promise<{
     return {
       numPages: pdf.numPages,
       title: metadata.info?.Title,
-      author: metadata.info?.Author
+      author: metadata.info?.Author,
     };
   } catch (error) {
     console.error('Error getting PDF metadata from URL:', error);
@@ -140,14 +134,13 @@ export const chunkText = (
     const pageNum = parseInt(pageMatches[i]);
     const pageContent = pageMatches[i + 1] || '';
 
-    for (let j = 0; j < pageContent.length; j += chunkSize - overlap) {
-      const chunk = pageContent.slice(j, j + chunkSize).trim();
+    const cleaned = cleanPDFText(pageContent);
+    if (!isRelevantText(cleaned)) continue;
+
+    for (let j = 0; j < cleaned.length; j += chunkSize - overlap) {
+      const chunk = cleaned.slice(j, j + chunkSize).trim();
       if (chunk.length > 100) {
-        chunks.push({
-          content: chunk,
-          page: pageNum,
-          pdfId
-        });
+        chunks.push({ content: chunk, page: pageNum, pdfId });
       }
     }
   }
@@ -172,9 +165,7 @@ export const findRelevantChunks = (
       score += matches * word.length;
     }
 
-    if (contentLower.includes(queryLower)) {
-      score += 100;
-    }
+    if (contentLower.includes(queryLower)) score += 100;
 
     return { chunk, score };
   });
