@@ -136,69 +136,62 @@ const QuizPage = () => {
     setLoading(true);
 
     try {
-      let allText = '';
-
+      const pdfTexts: string[] = [];
       for (const pdfId of selectedPDFs) {
-        const pdfText = await getPDFText(pdfId);
+        let pdfText = await getPDFText(pdfId);
 
-        if (pdfText) {
-          allText += pdfText + '\n\n';
-        } else {
-          console.warn(`No saved text for PDF ${pdfId}, extracting now...`);
+        if (!pdfText) {
           const pdf = await getPDFById(pdfId);
-
-          if (!pdf || !pdf.fileUrl) {
-            console.warn(`Skipping PDF ${pdfId} - no file URL`);
-            continue;
-          }
+          if (!pdf?.fileUrl) continue;
 
           const response = await fetch(pdf.fileUrl);
           const blob = await response.blob();
           const file = new File([blob], pdf.name, { type: 'application/pdf' });
-          const extractedText = await extractTextFromPDF(file);
-
-          await savePDFText(pdfId, extractedText);
-          allText += extractedText + '\n\n';
+          pdfText = await extractTextFromPDF(file);
+          await savePDFText(pdfId, pdfText);
         }
+
+        pdfTexts.push(pdfText);
       }
 
-      if (!allText.trim()) {
-        throw new Error('No text extracted from PDFs');
+      if (pdfTexts.length === 0 || pdfTexts.every(t => !t.trim())) {
+        throw new Error('No text extracted from selected PDFs');
       }
 
-      console.log('Extracted text length:', allText.length);
+      const questionsPerPDF = Math.max(1, Math.floor(numQuestions / selectedPDFs.length));
+      const remainder = numQuestions % selectedPDFs.length;
 
-      const questions = await generateQuiz({
-        pdfContent: allText,
-        quizType: quizType as any,
-        numQuestions: numQuestions,
-        difficulty: 'medium'
-      });
+      const allQuestions: any[] = [];
 
-      console.log('Generated questions:', questions);
+      for (let i = 0; i < pdfTexts.length; i++) {
+        const pdfContent = pdfTexts[i];
+        const numQ = questionsPerPDF + (i < remainder ? 1 : 0);
+        const questions = await generateQuiz({
+          pdfContent,
+          quizType: quizType as any,
+          numQuestions: numQ,
+          difficulty: 'medium'
+        });
 
-      if (!questions || questions.length === 0) {
-        throw new Error('No questions generated');
+        allQuestions.push(...questions);
+      }
+
+      if (allQuestions.length === 0) {
+        throw new Error('No questions generated from PDFs');
       }
 
       const newQuiz = {
         id: uuidv4(),
-        pdfId: selectedPDFs[0],
+        pdfId: selectedPDFs[0], 
         type: quizType as any,
-        questions: questions.map((q, idx) => ({
-          ...q,
-          id: uuidv4(),
-        })),
+        questions: allQuestions.map(q => ({ ...q, id: uuidv4() })),
         createdAt: new Date().toISOString()
       };
-
-      console.log('Created quiz object:', newQuiz);
 
       await saveQuiz(newQuiz);
       setCurrentQuiz(newQuiz);
       setAnswers({});
-
-    } catch (error) {
+    } catch (error: any) {
       console.error('Quiz generation error:', error);
       alert(`Failed to generate quiz: ${error.message}`);
     } finally {

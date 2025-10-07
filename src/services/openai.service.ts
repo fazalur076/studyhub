@@ -15,7 +15,7 @@ const MODEL_FALLBACKS: Record<string, string> = {
 
 interface QuizGenerationOptions {
   pdfContent: string;
-  quizType: QuizType;
+  quizType: string;
   numQuestions: number;
   difficulty?: 'easy' | 'medium' | 'hard';
 }
@@ -80,7 +80,8 @@ export const generateQuiz = async (
       messages: [
         {
           role: 'system',
-          content: 'You are an expert educational content creator specializing in creating high-quality quiz questions from textbook content.'
+          content:
+            'You are an expert educational content creator specializing in creating high-quality quiz questions from textbook content.'
         },
         {
           role: 'user',
@@ -91,14 +92,30 @@ export const generateQuiz = async (
       temperature: 0.7
     });
 
+    // Parse AI response
     const result = JSON.parse(response.choices[0].message.content || '{}');
-    return result.questions || [];
+
+    // Ensure number of questions requested is respected
+    let questions: QuizQuestion[] = result.questions || [];
+    if (questions.length > numQuestions) {
+      questions = questions.slice(0, numQuestions);
+    }
+
+    return questions;
   } catch (error: any) {
     console.error('Error generating quiz:', error);
-    if (error?.code === 'model_decommissioned' && MODEL_FALLBACKS[import.meta.env.VITE_AI_MODEL]) {
-      console.warn(`Model ${import.meta.env.VITE_AI_MODEL} decommissioned, trying fallback...`);
+
+    // Fallback if model decommissioned
+    if (
+      error?.code === 'model_decommissioned' &&
+      MODEL_FALLBACKS[import.meta.env.VITE_AI_MODEL]
+    ) {
+      console.warn(
+        `Model ${import.meta.env.VITE_AI_MODEL} decommissioned, trying fallback...`
+      );
       return generateQuizWithFallback(options, MODEL_FALLBACKS[import.meta.env.VITE_AI_MODEL]);
     }
+
     throw new Error('Failed to generate quiz questions');
   }
 };
