@@ -19,12 +19,26 @@ const PDFViewer = ({ pdfUrl: pdfId, onLoadSuccess }: PDFViewerProps) => {
   const [pageNumber, setPageNumber] = useState<number>(1);
   const [scale, setScale] = useState<number>(1.0);
   const [actualPdfUrl, setActualPdfUrl] = useState<string | null>(null);
-  const objectUrlRef = useRef<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
+  const currentPdfIdRef = useRef<string | null>(null);
+  const objectUrlRef = useRef<string | null>(null);
+
   useEffect(() => {
+    return () => {
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current);
+        objectUrlRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    currentPdfIdRef.current = pdfId;
+
     const loadPdfUrl = async () => {
       try {
         setLoading(true);
@@ -32,13 +46,17 @@ const PDFViewer = ({ pdfUrl: pdfId, onLoadSuccess }: PDFViewerProps) => {
 
         const pdf = await getPDFById(pdfId);
 
+        if (cancelled || currentPdfIdRef.current !== pdfId) return;
+
         if (!pdf) {
           setError('PDF not found');
+          setLoading(false);
           return;
         }
 
         if (!pdf.fileUrl) {
           setError('PDF file URL not available');
+          setLoading(false);
           return;
         }
 
@@ -46,41 +64,69 @@ const PDFViewer = ({ pdfUrl: pdfId, onLoadSuccess }: PDFViewerProps) => {
           const url = pdf.fileUrl;
           const parts = url.split('/');
           const filePath = parts[parts.length - 1];
+
           const { data, error: dlError } = await supabase.storage
             .from('study-app-pdfs')
             .download(filePath);
 
+          if (cancelled || currentPdfIdRef.current !== pdfId) return;
+
           if (dlError) {
             setActualPdfUrl(url);
+            setLoading(false);
             return;
           }
 
           const blob = data as Blob;
-          const blobUrl = URL.createObjectURL(blob);
-          if (objectUrlRef.current) {
+
+          if (objectUrlRef.current && objectUrlRef.current !== url) {
             URL.revokeObjectURL(objectUrlRef.current);
           }
+
+          const blobUrl = URL.createObjectURL(blob);
           objectUrlRef.current = blobUrl;
-          setActualPdfUrl(blobUrl);
-        } catch (_e) {
-          setActualPdfUrl(pdf.fileUrl);
+
+          if (!cancelled && currentPdfIdRef.current === pdfId) {
+            setActualPdfUrl(blobUrl);
+            setLoading(false);
+          } else {
+            URL.revokeObjectURL(blobUrl);
+          }
+
+        } catch (err) {
+          console.error('Error downloading from Supabase:', err);
+          if (!cancelled && currentPdfIdRef.current === pdfId) {
+            setActualPdfUrl(pdf.fileUrl);
+            setLoading(false);
+          }
         }
       } catch (err) {
         console.error('Error loading PDF URL:', err);
-        setError('Failed to load PDF');
-      } finally {
-        setLoading(false);
+        if (!cancelled && currentPdfIdRef.current === pdfId) {
+          setError('Failed to load PDF');
+          setLoading(false);
+        }
       }
     };
 
     if (pdfId) {
       loadPdfUrl();
     }
+
+    return () => {
+      cancelled = true;
+    };
   }, [pdfId]);
 
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
+    setError(null);
     onLoadSuccess?.(numPages);
+  };
+
+  const onDocumentLoadError = (error: Error) => {
+    console.error('PDF load error:', error);
+    setError('Failed to load PDF document');
   };
 
   const goToPrevPage = () => {
@@ -225,10 +271,7 @@ const PDFViewer = ({ pdfUrl: pdfId, onLoadSuccess }: PDFViewerProps) => {
         <Document
           file={actualPdfUrl}
           onLoadSuccess={onDocumentLoadSuccess}
-          onLoadError={(error) => {
-            console.error('PDF load error:', error);
-            setError('Failed to load PDF document');
-          }}
+          onLoadError={onDocumentLoadError}
           loading={
             <div className="text-center py-12">
               <div className="relative inline-block">
