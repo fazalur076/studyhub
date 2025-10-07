@@ -9,7 +9,7 @@ import PDFViewer from '../pdf/PDFViewer';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import ConfirmModal from '../ui/confirmModal';
-import toast from 'sonner';
+import { toast } from 'sonner';
 
 interface ChatInterfaceProps {
   session: ChatSession;
@@ -108,6 +108,7 @@ const ChatInterface = ({ session, onUpdateSession, onDeleteSession }: ChatInterf
     if (!session?.id) return;
 
     try {
+
       await deleteChatSession(session.id);
       onDeleteSession();
     } catch (error) {
