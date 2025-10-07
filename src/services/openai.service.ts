@@ -34,19 +34,22 @@ const buildQuizPrompt = (
   };
 
   return `
-Based on the following textbook content, generate ${numQuestions} ${difficulty} difficulty ${type} questions.
+Based on the following content, generate ${numQuestions} ${difficulty} difficulty ${type} questions.
 
 ${typeInstructions[type]}
 
 Content:
 ${content.slice(0, 4000)}
 
-Requirements:
+CRITICAL REQUIREMENTS:
 1. Questions should test conceptual understanding, not just recall
-2. Include page references if possible
+2. Store page numbers ONLY in the "pageReference" field - NEVER mention pages in the question text
 3. Provide detailed explanations for each answer
 4. Identify the topic/concept being tested
 5. For MCQs, ensure distractors are plausible
+6. FORBIDDEN PHRASES in question text: "Question No.", "from the textbook", "based on the content", "according to the passage", "described in the problem", "on page X", "in the text", "mentioned above"
+7. Questions must be direct and standalone - write as if for a professional exam
+8. Example: Instead of "What is X described in the problem on page 3?" write simply "What is X?"
 
 Return the response as a **valid JSON object**, strictly following this example format (do not include comments):
 
