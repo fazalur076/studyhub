@@ -1,9 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
+import workerSrc from 'pdfjs-dist/build/pdf.worker.mjs?url';
+import 'react-pdf/dist/Page/TextLayer.css';
+import 'react-pdf/dist/Page/AnnotationLayer.css';
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Loader, Maximize2, Minimize2 } from 'lucide-react';
 import { getPDFById } from '../../services/storage.service';
+import { supabase } from '../../services/supabaseClient';
 
-pdfjs.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
 
 interface PDFViewerProps {
   pdfUrl: string;
@@ -15,6 +19,7 @@ const PDFViewer = ({ pdfUrl: pdfId, onLoadSuccess }: PDFViewerProps) => {
   const [pageNumber, setPageNumber] = useState<number>(1);
   const [scale, setScale] = useState<number>(1.0);
   const [actualPdfUrl, setActualPdfUrl] = useState<string | null>(null);
+  const objectUrlRef = useRef<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -37,7 +42,29 @@ const PDFViewer = ({ pdfUrl: pdfId, onLoadSuccess }: PDFViewerProps) => {
           return;
         }
 
-        setActualPdfUrl(pdf.fileUrl);
+        try {
+          const url = pdf.fileUrl;
+          const parts = url.split('/');
+          const filePath = parts[parts.length - 1];
+          const { data, error: dlError } = await supabase.storage
+            .from('study-app-pdfs')
+            .download(filePath);
+
+          if (dlError) {
+            setActualPdfUrl(url);
+            return;
+          }
+
+          const blob = data as Blob;
+          const blobUrl = URL.createObjectURL(blob);
+          if (objectUrlRef.current) {
+            URL.revokeObjectURL(objectUrlRef.current);
+          }
+          objectUrlRef.current = blobUrl;
+          setActualPdfUrl(blobUrl);
+        } catch (_e) {
+          setActualPdfUrl(pdf.fileUrl);
+        }
       } catch (err) {
         console.error('Error loading PDF URL:', err);
         setError('Failed to load PDF');

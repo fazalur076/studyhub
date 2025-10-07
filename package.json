@@ -11,8 +11,6 @@
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.3",
-    "@react-pdf-viewer/core": "^3.12.0",
-    "@react-pdf-viewer/default-layout": "^3.12.0",
     "@supabase/supabase-js": "^2.74.0",
     "@tanstack/react-query": "^5.90.2",
     "axios": "^1.12.2",
@@ -22,7 +20,7 @@
     "lucide-react": "^0.544.0",
     "openai": "^6.1.0",
     "pdf-parse": "^2.1.7",
-    "pdfjs-dist": "^3.11.174",
+    "pdfjs-dist": "5.3.93",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-pdf": "^10.1.0",

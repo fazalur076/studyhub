@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Loader, BookOpen, MessageSquare, Sparkles, AlertCircle, Trash, FileText } from 'lucide-react';
-import { type ChatSession, type ChatMessage, type PDF } from '../../types';
+import { Send, Loader, BookOpen, MessageSquare, Sparkles, AlertCircle, Trash } from 'lucide-react';
+import { type ChatSession, type ChatMessage } from '../../types';
 import { generateChatResponse } from '../../services/openai.service';
-import { getPDFText, getPDFById, deleteChatSession, getAllPDFs } from '../../services/storage.service';
-import { chunkText, findRelevantChunks, extractTextFromPDF, extractTextFromURL, type PDFChunk } from '../../services/pdf.service';
+import { getPDFText, getPDFById, deleteChatSession } from '../../services/storage.service';
+import { chunkText, findRelevantChunks, extractTextFromURL, type PDFChunk } from '../../services/pdf.service';
 import ChatMessageComponent from './ChatMessage';
 import PDFViewer from '../pdf/PDFViewer';
 import { Button } from '../ui/button';
@@ -25,7 +25,7 @@ const ChatInterface = ({ session, onUpdateSession, onDeleteSession }: ChatInterf
   const [activePDFId, setActivePDFId] = useState<string | null>(
     session.pdfContext?.length ? session.pdfContext[0] : null
   );
-  const [showPDFPanel, setShowPDFPanel] = useState(true);
+  const [showPDFPanel, setShowPDFPanel] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -126,13 +126,13 @@ const ChatInterface = ({ session, onUpdateSession, onDeleteSession }: ChatInterf
       id: `msg-${Date.now()}`,
       role: 'user',
       content: input.trim(),
-      timestamp: new Date()
+      timestamp: new Date().toISOString()
     };
 
     const updatedSession = {
       ...session,
       messages: [...session.messages, userMessage],
-      updatedAt: new Date(),
+      updatedAt: new Date().toISOString(),
       title: session.messages.length === 0 ? input.slice(0, 50) : session.title
     };
 
@@ -165,13 +165,13 @@ const ChatInterface = ({ session, onUpdateSession, onDeleteSession }: ChatInterf
         role: 'assistant',
         content: response.response,
         citations: response.citations,
-        timestamp: new Date()
+        timestamp: new Date().toISOString()
       };
 
       const finalSession = {
         ...updatedSession,
         messages: [...updatedSession.messages, assistantMessage],
-        updatedAt: new Date()
+        updatedAt: new Date().toISOString()
       };
 
       onUpdateSession(finalSession);
@@ -182,13 +182,13 @@ const ChatInterface = ({ session, onUpdateSession, onDeleteSession }: ChatInterf
         content: error instanceof Error && error.message.includes('No relevant content')
           ? "I couldn't find relevant information in your PDFs. Try rephrasing your question or check your PDFs."
           : 'Sorry, I encountered an error processing your request.',
-        timestamp: new Date()
+        timestamp: new Date().toISOString()
       };
 
       const errorSession = {
         ...updatedSession,
         messages: [...updatedSession.messages, errorMessage],
-        updatedAt: new Date()
+        updatedAt: new Date().toISOString()
       };
 
       onUpdateSession(errorSession);

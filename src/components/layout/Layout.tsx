@@ -98,7 +98,7 @@ const Layout = () => {
 
                 {profileOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 p-2 z-50">
-                    <p className="text-sm text-slate-700 px-2 py-1 truncate">{user?.email}</p>
+                    <h2 className="text-sm text-slate-700 px-2 py-1 truncate">{user?.email}</h2>
                     <button
                       onClick={() => { setProfileOpen(false); navigate('/profile'); }}
                       className="w-full text-left px-2 py-1 hover:bg-indigo-50 rounded"
