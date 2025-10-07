@@ -184,7 +184,7 @@ const QuizResults = ({ quiz, attempt, userAnswers, onNewQuiz }: QuizResultsProps
             <Button
               onClick={onNewQuiz}
               size="lg"
-              className="flex-1 text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
+              className="flex-1 p-3 text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
             >
               <RefreshCw className="text-white h-5 w-5 mr-2" />
               Generate New Quiz
@@ -193,7 +193,7 @@ const QuizResults = ({ quiz, attempt, userAnswers, onNewQuiz }: QuizResultsProps
               variant="outline"
               size="lg"
               onClick={() => navigate('/profile')}
-              className="flex-1 border-2 border-indigo-300 hover:bg-indigo-50 hover:border-indigo-400 transition-all duration-300"
+              className="flex-1 p-3 border-2 border-indigo-300 hover:bg-indigo-50 hover:border-indigo-400 transition-all duration-300"
             >
               <BarChart3 className="h-5 w-5 mr-2" />
               View Profile
@@ -202,7 +202,7 @@ const QuizResults = ({ quiz, attempt, userAnswers, onNewQuiz }: QuizResultsProps
               variant="outline"
               size="lg"
               onClick={() => navigate('/')}
-              className="flex-1 border-2 border-slate-300 hover:bg-slate-50 hover:border-slate-400 transition-all duration-300"
+              className="flex-1 p-3 border-2 border-slate-300 hover:bg-slate-50 hover:border-slate-400 transition-all duration-300"
             >
               <Home className="h-5 w-5 mr-2" />
               Home

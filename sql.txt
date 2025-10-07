@@ -1,0 +1,51 @@
+
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+CREATE TABLE pdfs (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name TEXT NOT NULL,
+  uploaded_at TIMESTAMPTZ DEFAULT NOW(),
+  file_url TEXT, -- URL to file in Supabase Storage
+  size BIGINT,
+  num_pages INTEGER,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE pdf_texts (
+  id UUID PRIMARY KEY REFERENCES pdfs(id) ON DELETE CASCADE,
+  text TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE quizzes (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  pdf_id UUID REFERENCES pdfs(id) ON DELETE CASCADE,
+  questions JSONB NOT NULL, -- Array of question objects
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE quiz_attempts (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  quiz_id UUID REFERENCES quizzes(id) ON DELETE CASCADE,
+  pdf_id UUID REFERENCES pdfs(id) ON DELETE CASCADE,
+  score INTEGER NOT NULL,
+  max_score INTEGER NOT NULL,
+  correct_answers TEXT[] NOT NULL, -- Array of question IDs
+  completed_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE chat_sessions (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  messages JSONB NOT NULL DEFAULT '[]'::jsonb, -- Array of message objects
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_pdfs_uploaded_at ON pdfs(uploaded_at DESC);
+CREATE INDEX idx_quizzes_pdf_id ON quizzes(pdf_id);
+CREATE INDEX idx_quizzes_created_at ON quizzes(created_at DESC);
+CREATE INDEX idx_attempts_quiz_id ON quiz_attempts(quiz_id);
+CREATE INDEX idx_attempts_pdf_id ON quiz_attempts(pdf_id);
+CREATE INDEX idx_attempts_completed_at ON quiz_attempts(completed_at DESC);
+CREATE INDEX idx_chat_sessions_updated_at ON chat_sessions(updated_at DESC);

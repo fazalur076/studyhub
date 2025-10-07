@@ -29,19 +29,39 @@ const SourceSelector = ({ pdfs, selectedPDFs, onSelectionChange, onDeletePDF }: 
 
   return (
     <Card className="shadow-xl border-0 overflow-hidden">
-      <CardHeader className="flex-row items-center justify-between bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-indigo-100">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center">
-            <Sparkles className="h-5 w-5 text-white" />
+      <CardHeader className="bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-indigo-100">
+        {/* Desktop Layout */}
+        <div className="hidden md:flex md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center">
+              <Sparkles className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <CardTitle className="text-lg">Select Sources</CardTitle>
+              <p className="text-xs text-slate-600">Choose the documents you want to include</p>
+            </div>
           </div>
-          <div>
-            <CardTitle className="text-lg">Select Sources</CardTitle>
-            <p className="text-xs text-slate-600">Choose the documents you want to include</p>
-          </div>
+          <Button variant="outline" size="sm" onClick={handleSelectAll} className="border-2 hover:bg-slate-50">
+            {selectedPDFs.length === pdfs.length ? 'Deselect All' : 'Select All'}
+          </Button>
         </div>
-        <Button variant="outline" size="sm" onClick={handleSelectAll} className="border-2 hover:bg-slate-50">
-          {selectedPDFs.length === pdfs.length ? 'Deselect All' : 'Select All'}
-        </Button>
+
+        {/* Mobile Layout */}
+        <div className="flex items-center flex-col space-y-4 md:hidden">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center">
+              <Sparkles className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <CardTitle className="text-lg">Select Sources</CardTitle>
+              <p className="text-xs text-slate-600">Choose the documents you want to include</p>
+            </div>
+          </div>
+
+          <Button variant="outline" size="xs" onClick={handleSelectAll} className="text-xs border-2 hover:bg-slate-50">
+            {selectedPDFs.length === pdfs.length ? 'Deselect All' : 'Select All'}
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         {pdfs.length === 0 ? (
@@ -60,16 +80,16 @@ const SourceSelector = ({ pdfs, selectedPDFs, onSelectionChange, onDeletePDF }: 
                 <div
                   key={pdf.id}
                   className={`relative p-5 rounded-xl border-2 transition-all duration-300 w-full cursor-pointer ${isSelected
-                      ? 'border-indigo-500 bg-gradient-to-r from-indigo-50 to-purple-50 shadow-lg scale-[1.02]'
-                      : 'border-slate-200 hover:border-indigo-300 hover:shadow-md hover:scale-[1.01]'
+                    ? 'border-indigo-500 bg-gradient-to-r from-indigo-50 to-purple-50 shadow-lg scale-[1.02]'
+                    : 'border-slate-200 hover:border-indigo-300 hover:shadow-md hover:scale-[1.01]'
                     }`}
                   onClick={() => handleTogglePDF(pdf.id)}
                 >
                   <div className="flex items-center gap-4">
                     <div
                       className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${isSelected
-                          ? 'bg-gradient-to-r from-indigo-600 to-purple-600'
-                          : 'bg-slate-100 hover:bg-slate-200'
+                        ? 'bg-gradient-to-r from-indigo-600 to-purple-600'
+                        : 'bg-slate-100 hover:bg-slate-200'
                         }`}
                     >
                       <BookOpen className={`h-6 w-6 ${isSelected ? 'text-white' : 'text-slate-600'}`} />
@@ -85,7 +105,6 @@ const SourceSelector = ({ pdfs, selectedPDFs, onSelectionChange, onDeletePDF }: 
 
                     {isSelected && (
                       <div className="flex items-center gap-2 flex-shrink-0">
-
                         {onDeletePDF && (
                           <div
                             onClick={(e) => {

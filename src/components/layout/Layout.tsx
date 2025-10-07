@@ -91,42 +91,66 @@ const Layout = () => {
               <div ref={profileRef} className="relative">
                 <button
                   onClick={() => setProfileOpen(prev => !prev)}
-                  className="flex items-center justify-center h-10 w-10 rounded-full bg-indigo-600 text-white font-semibold hover:shadow-md transition"
+                  className="relative flex items-center justify-center h-10 w-10 rounded-full bg-gradient-to-br from-indigo-600 to-purple-600 text-white font-semibold hover:shadow-lg hover:scale-105 transition-all duration-300 ring-2 ring-white ring-offset-2 ring-offset-transparent hover:ring-offset-indigo-100"
                 >
                   {user?.email ? user.email[0].toUpperCase() : 'U'}
                 </button>
 
                 {profileOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 p-2 z-50">
-                    <h2 className="text-sm text-slate-700 px-2 py-1 truncate">{user?.email}</h2>
-                    <button
-                      onClick={() => { setProfileOpen(false); navigate('/profile'); }}
-                      className="w-full text-left px-2 py-1 hover:bg-indigo-50 rounded"
-                    >
-                      Profile
-                    </button>
-                    <button
-                      onClick={handleLogout}
-                      className="w-full text-left px-2 py-1 text-red-600 hover:bg-red-50 rounded"
-                    >
-                      Logout
-                    </button>
+                  <div className="absolute right-0 mt-3 w-48 md:w-56 bg-white rounded-xl shadow-2xl border border-slate-200/50 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                    {/* Header Section */}
+                    <div className="bg-gradient-to-br from-indigo-50 to-purple-50 px-4 py-3 border-b border-slate-200/50">
+                      <div className="flex items-center gap-3">
+                        <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gradient-to-br from-indigo-600 to-purple-600 text-white font-semibold flex items-center justify-center text-lg shadow-md">
+                          {user?.email ? user.email[0].toUpperCase() : 'U'}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-slate-900 truncate">
+                            {user?.email?.split('@')[0] || 'User'}
+                          </p>
+                          <p className="text-xs text-slate-500 truncate">{user?.email}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Menu Items */}
+                    <div className="py-2">
+                      <button
+                        onClick={() => { setProfileOpen(false); navigate('/profile'); }}
+                        className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors duration-200 flex items-center gap-3"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        Profile
+                      </button>
+                      <div className="my-1 border-t border-slate-100"></div>
+                      <button
+                        onClick={handleLogout}
+                        className="w-full text-left px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors duration-200 flex items-center gap-3"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        Logout
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
-            </div>
+              </div>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-20 md:pb-8">
         <Outlet />
       </main>
 
       {/* Mobile Bottom Navigation */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 z-50 shadow-lg">
-        <div className="grid grid-cols-3 px-2 py-2">
+        <div className="grid grid-cols-3 px-2 py-2 safe-area-inset-bottom">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
             const Icon = item.icon;

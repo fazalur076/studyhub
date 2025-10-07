@@ -75,7 +75,7 @@ const HomePage = () => {
       setPdfToDelete(null);
     }
   };
-  
+
   const handleUpload = async () => {
     if (!selectedFile) return;
 
@@ -231,29 +231,58 @@ const HomePage = () => {
 
       {/* PDF Library */}
       <Card className="shadow-xl border-0 overflow-hidden">
-        <CardHeader className="flex-row items-center justify-between bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-indigo-100">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center">
-              <BookOpen className="h-5 w-5 text-white" />
+        <CardHeader className="bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-indigo-100">
+          <div className="hidden md:flex md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center">
+                <BookOpen className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <CardTitle className="text-lg">Your Library</CardTitle>
+                <p className="text-xs text-slate-600">Manage your study materials</p>
+              </div>
             </div>
-            <div>
-              <CardTitle className="text-lg">Your Library</CardTitle>
-              <p className="text-xs text-slate-600">Manage your study materials</p>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={() => setShowUpload(true)}
+                className="bg-gradient-to-r text-white from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                size="sm"
+              >
+                <Upload className="h-4 w-4 mr-1" />
+                Upload
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleSelectAll} className="border-2 hover:bg-slate-50">
+                {selectedPDFs.length === pdfs.length ? 'Deselect All' : 'Select All'}
+              </Button>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              onClick={() => setShowUpload(true)}
-              className="bg-gradient-to-r text-white from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-              size="sm"
-            >
-              <Upload className="h-4 w-4 mr-1" />
-              Upload
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleSelectAll} className="border-2 hover:bg-slate-50">
-              {selectedPDFs.length === pdfs.length ? 'Deselect All' : 'Select All'}
-            </Button>
+
+          <div className="flex items-center flex-col space-y-4 md:hidden">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center">
+                <BookOpen className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <CardTitle className="text-lg">Your Library</CardTitle>
+                <p className="text-xs text-slate-600">Manage your study materials</p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-center mt-3 gap-2">
+              <Button
+                onClick={() => setShowUpload(true)}
+                className="bg-gradient-to-r text-white text-xs from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                size="xs"
+              >
+                <Upload className="h-3 w-3 mr-1" />
+                Upload
+              </Button>
+              <Button variant="outline" size="xs" onClick={handleSelectAll} className=" text-xs border-2 hover:bg-slate-50">
+                {selectedPDFs.length === pdfs.length ? 'Deselect All' : 'Select All'}
+              </Button>
+            </div>
           </div>
+
         </CardHeader>
         <CardContent>
           {pdfs.length === 0 ? (
@@ -266,55 +295,54 @@ const HomePage = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                {pdfs.map((pdf) => {
-                  const isSelected = selectedPDFs.includes(pdf.id);
-                  return (
-                    <div
-                      key={pdf.id}
-                      className={`relative p-5 rounded-xl border-2 transition-all duration-300 w-full ${isSelected
-                          ? 'border-indigo-500 bg-gradient-to-r from-indigo-50 to-purple-50 shadow-lg scale-[1.02]'
-                          : 'border-slate-200 hover:border-indigo-300 hover:shadow-md hover:scale-[1.01]'
-                        }`}
-                      onClick={() => togglePDF(pdf.id)}
-                    >
-                      <div className="flex items-center gap-4">
-                        <div
-                          className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${isSelected
-                              ? 'bg-gradient-to-r from-indigo-600 to-purple-600'
-                              : 'bg-slate-100 hover:bg-slate-200'
-                            }`}
-                        >
-                          <BookOpen className={`h-6 w-6 ${isSelected ? 'text-white' : 'text-slate-600'}`} />
-                        </div>
-
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-slate-800 truncate">{pdf.name}</p>
-                          <p className="text-xs text-slate-600 mt-1">
-                            {pdf.isSeeded ? 'NCERT' : 'Uploaded'} • {new Date(pdf.uploadedAt).toLocaleDateString()}
-                            {pdf.totalPages ? ` • ${pdf.totalPages} pages` : ''}
-                          </p>
-                        </div>
-
-                        {isSelected && (
-                          <div className="flex items-center gap-2 flex-shrink-0">
-
-                            {/* Trash/Delete Icon */}
-                            <div
-                              onClick={(e) => {
-                                e.stopPropagation(); // prevent toggling selection
-                                handleDeletePDF(pdf.id);
-                              }}
-                              className="w-7 h-7 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center cursor-pointer"
-                              title="Delete PDF"
-                            >
-                              <Trash className="w-4 h-4 text-white" />
-                            </div>
-                          </div>
-                        )}
+              {pdfs.map((pdf) => {
+                const isSelected = selectedPDFs.includes(pdf.id);
+                return (
+                  <div
+                    key={pdf.id}
+                    className={`relative p-5 rounded-xl border-2 transition-all duration-300 w-full ${isSelected
+                      ? 'border-indigo-500 bg-gradient-to-r from-indigo-50 to-purple-50 shadow-lg scale-[1.02]'
+                      : 'border-slate-200 hover:border-indigo-300 hover:shadow-md hover:scale-[1.01]'
+                      }`}
+                    onClick={() => togglePDF(pdf.id)}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div
+                        className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${isSelected
+                          ? 'bg-gradient-to-r from-indigo-600 to-purple-600'
+                          : 'bg-slate-100 hover:bg-slate-200'
+                          }`}
+                      >
+                        <BookOpen className={`h-6 w-6 ${isSelected ? 'text-white' : 'text-slate-600'}`} />
                       </div>
+
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-slate-800 truncate">{pdf.name}</p>
+                        <p className="text-xs text-slate-600 mt-1">
+                          {pdf.isSeeded ? 'NCERT' : 'Uploaded'} • {new Date(pdf.uploadedAt).toLocaleDateString()}
+                          {pdf.totalPages ? ` • ${pdf.totalPages} pages` : ''}
+                        </p>
+                      </div>
+
+                      {isSelected && (
+                        <div className="flex items-center gap-2 flex-shrink-0">
+
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeletePDF(pdf.id);
+                            }}
+                            className="w-7 h-7 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center cursor-pointer"
+                            title="Delete PDF"
+                          >
+                            <Trash className="w-4 h-4 text-white" />
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  );
-                })}
+                  </div>
+                );
+              })}
 
             </div>
           )}
@@ -443,7 +471,7 @@ const HomePage = () => {
         </DialogContent>
       </Dialog>
     </div>
-    
+
   );
 };
 

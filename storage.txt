@@ -1,0 +1,22 @@
+-- Bucket name: 'study-app-pdfs'
+-- Public: false (files require authentication to access)
+-- Allowed MIME types: application/pdf
+-- Max file size: 50MB
+
+-- After creating the bucket via dashboard, run this to set storage policies:
+-- Go to Storage > study-app-pdfs > Policies and create:
+
+-- Policy for INSERT (upload):
+-- CREATE POLICY "Allow PDF uploads"
+-- ON storage.objects FOR INSERT
+-- WITH CHECK (bucket_id = 'study-app-pdfs');
+
+-- Policy for SELECT (download):
+-- CREATE POLICY "Allow PDF downloads"
+-- ON storage.objects FOR SELECT
+-- USING (bucket_id = 'study-app-pdfs');
+
+-- Policy for DELETE:
+-- CREATE POLICY "Allow PDF deletion"
+-- ON storage.objects FOR DELETE
+-- USING (bucket_id = 'study-app-pdfs');

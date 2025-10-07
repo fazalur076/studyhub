@@ -112,46 +112,47 @@ const ChatPage = () => {
   ];
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] bg-slate-50">
-      {/* Sidebar */}
-      <ChatSidebar
-        sessions={sessions}
-        currentSession={currentSession}
-        onSelectSession={handleSelectSession}
-        onNewChat={handleNewChat}
-        isOpen={sidebarOpen}
-        onToggle={() => setSidebarOpen(!sidebarOpen)}
-      />
+    <div className="flex flex-col md:flex-row h-[calc(100vh-8rem)] bg-slate-50">
+      <div className={`${showSourceSelector || currentSession ? 'hidden md:flex' : 'flex'} md:flex`}>
+        <ChatSidebar
+          sessions={sessions}
+          currentSession={currentSession}
+          onSelectSession={handleSelectSession}
+          onNewChat={handleNewChat}
+          isOpen={sidebarOpen}
+          onToggle={() => setSidebarOpen(!sidebarOpen)}
+        />
+      </div>
 
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col bg-white">
         {showSourceSelector ? (
           <div className="flex-1 overflow-y-auto">
-            {/* Hero Section - matching quiz style */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 p-12">
+            <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 p-8 md:p-12">
               <div className="absolute inset-0 bg-black/10"></div>
               <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
               <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
 
               <div className="relative z-10 max-w-4xl mx-auto">
                 <div className="flex items-center gap-2 mb-4">
-                  <Target className="h-6 w-6 text-yellow-300 animate-pulse" />
-                  <span className="text-white/90 font-medium">AI Chat Assistant</span>
+                  <Target className="h-5 w-5 md:h-6 md:w-6 text-yellow-300 animate-pulse" />
+                  <span className="text-white/90 font-medium text-sm md:text-base">AI Chat Assistant</span>
                 </div>
-                <h1 className="text-5xl md:text-6xl font-bold text-white mb-4 leading-tight">
+                <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold text-white mb-4 leading-tight">
                   Start a New<br />Conversation
                 </h1>
-                <p className="text-xl text-white/90 max-w-2xl">
+                <p className="text-base md:text-xl text-white/90 max-w-2xl">
                   Select your study materials and get instant help from your AI tutor
                 </p>
               </div>
             </div>
 
-            <div className="max-w-4xl mx-auto p-8 space-y-8">
-              {/* Source Selection Card - matching quiz style */}
+            <div className="max-w-4xl mx-auto p-4 md:p-8 space-y-6 md:space-y-8">
+              {/* Source Selection Card */}
               <Card className="shadow-xl border-0 overflow-hidden">
-                <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-indigo-100 p-8">
-                  <div className="flex items-center gap-3">
+                <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-indigo-100 p-4 md:p-8">
+                  {/* Desktop Layout */}
+                  <div className="hidden md:flex md:items-center md:gap-3">
                     <div className="w-12 h-12 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center">
                       <BookOpen className="h-6 w-6 text-white" />
                     </div>
@@ -160,22 +161,36 @@ const ChatPage = () => {
                       <p className="text-sm text-slate-600 mt-1">Choose the documents you want to chat about</p>
                     </div>
                   </div>
+
+                  {/* Mobile Layout */}
+                  <div className="flex flex-col items-center space-y-3 md:hidden">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center">
+                        <BookOpen className="h-5 w-5 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-slate-800">Select Study Materials</h3>
+                        <p className="text-xs text-slate-600">Choose documents to chat about</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                <CardContent className="p-8">
+                <CardContent className="p-4 md:p-8">
                   {pdfs.length === 0 ? (
-                    <div className="text-center py-12">
-                      <BookOpen className="h-16 w-16 text-slate-300 mx-auto mb-4" />
-                      <p className="text-slate-600 mb-4">No PDFs uploaded yet</p>
+                    <div className="text-center py-8 md:py-12">
+                      <BookOpen className="h-12 w-12 md:h-16 md:w-16 text-slate-300 mx-auto mb-4" />
+                      <p className="text-slate-600 mb-4 text-sm md:text-base">No PDFs uploaded yet</p>
                       <Button
                         variant="outline"
                         className="border-2 hover:bg-slate-50"
+                        size="sm"
                       >
                         Upload Your First PDF
                       </Button>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                       {pdfs.map((pdf) => (
                         <div
                           key={pdf.id}
@@ -186,31 +201,31 @@ const ChatPage = () => {
                               setSelectedPDFs([...selectedPDFs, pdf.id]);
                             }
                           }}
-                          className={`group p-5 rounded-xl border-2 cursor-pointer transition-all duration-300 ${selectedPDFs.includes(pdf.id)
-                              ? 'border-indigo-500 bg-gradient-to-r from-indigo-50 to-purple-50 shadow-lg scale-[1.02]'
-                              : 'border-slate-200 hover:border-indigo-300 hover:shadow-md hover:scale-[1.01]'
+                          className={`group p-4 md:p-5 rounded-xl border-2 cursor-pointer transition-all duration-300 ${selectedPDFs.includes(pdf.id)
+                            ? 'border-indigo-500 bg-gradient-to-r from-indigo-50 to-purple-50 shadow-lg scale-[1.02]'
+                            : 'border-slate-200 hover:border-indigo-300 hover:shadow-md hover:scale-[1.01]'
                             }`}
                         >
-                          <div className="flex items-center gap-4">
-                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${selectedPDFs.includes(pdf.id)
-                                ? 'bg-gradient-to-r from-indigo-600 to-purple-600'
-                                : 'bg-slate-100 group-hover:bg-slate-200'
+                          <div className="flex items-center gap-3 md:gap-4">
+                            <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center transition-all ${selectedPDFs.includes(pdf.id)
+                              ? 'bg-gradient-to-r from-indigo-600 to-purple-600'
+                              : 'bg-slate-100 group-hover:bg-slate-200'
                               }`}>
-                              <BookOpen className={`h-6 w-6 ${selectedPDFs.includes(pdf.id) ? 'text-white' : 'text-slate-600'
+                              <BookOpen className={`h-5 w-5 md:h-6 md:w-6 ${selectedPDFs.includes(pdf.id) ? 'text-white' : 'text-slate-600'
                                 }`} />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="font-semibold text-slate-800 truncate">{pdf.name}</p>
+                              <p className="font-semibold text-sm md:text-base text-slate-800 truncate">{pdf.name}</p>
                               <Badge
                                 variant={pdf.isSeeded ? "default" : "secondary"}
-                                className={`mt-1 ${pdf.isSeeded ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}
+                                className={`mt-1 text-xs ${pdf.isSeeded ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}
                               >
                                 {pdf.isSeeded ? 'NCERT' : 'Uploaded'}
                               </Badge>
                             </div>
                             {selectedPDFs.includes(pdf.id) && (
-                              <div className="w-7 h-7 bg-indigo-500 rounded-full flex items-center justify-center flex-shrink-0">
-                                <svg className="w-4 h-4 text-white" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" viewBox="0 0 24 24" stroke="currentColor">
+                              <div className="w-6 h-6 md:w-7 md:h-7 bg-indigo-500 rounded-full flex items-center justify-center flex-shrink-0">
+                                <svg className="w-3 h-3 md:w-4 md:h-4 text-white" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" viewBox="0 0 24 24" stroke="currentColor">
                                   <path d="M5 13l4 4L19 7"></path>
                                 </svg>
                               </div>
@@ -223,13 +238,13 @@ const ChatPage = () => {
                 </CardContent>
               </Card>
 
-              {/* Action Buttons - matching quiz style */}
-              <div className="flex gap-4">
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
                 <Button
                   variant="outline"
                   onClick={() => setShowSourceSelector(false)}
                   size="lg"
-                  className="flex-1 border-2 hover:bg-slate-50 hover:border-slate-400 transition-all duration-300"
+                  className="flex-1 border-2 hover:bg-slate-50 hover:border-slate-400 transition-all duration-300 py-3 md:py-3"
                 >
                   Cancel
                 </Button>
@@ -237,7 +252,7 @@ const ChatPage = () => {
                   onClick={handleStartChat}
                   disabled={selectedPDFs.length === 0}
                   size="lg"
-                  className={`flex-1 bg-gradient-to-r text-white from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 ${selectedPDFs.length > 0 ? 'hover:scale-[1.02]' : 'opacity-50 cursor-not-allowed'
+                  className={`flex-1 bg-gradient-to-r text-white from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 py-3 md:py-3 ${selectedPDFs.length > 0 ? 'hover:scale-[1.02]' : 'opacity-50 cursor-not-allowed'
                     }`}
                 >
                   <MessageSquare className="text-white h-5 w-5 mr-2" />
@@ -246,21 +261,21 @@ const ChatPage = () => {
               </div>
 
               {selectedPDFs.length === 0 && (
-                <p className="text-center text-sm text-slate-500">
+                <p className="text-center text-xs md:text-sm text-slate-500">
                   Please select at least one study material to continue
                 </p>
               )}
 
-              {/* Quick Tips Card - matching quiz style */}
+              {/* Quick Tips Card */}
               <Card className="bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-200 shadow-lg">
-                <CardContent className="p-6">
-                  <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Sparkles className="h-5 w-5 text-white" />
+                <CardContent className="p-4 md:p-6">
+                  <div className="flex items-start gap-3 md:gap-4">
+                    <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Sparkles className="h-4 w-4 md:h-5 md:w-5 text-white" />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-slate-800 mb-2">Pro Tips for Better Conversations</h4>
-                      <ul className="space-y-1 text-sm text-slate-700">
+                      <h4 className="font-semibold text-sm md:text-base text-slate-800 mb-2">Pro Tips for Better Conversations</h4>
+                      <ul className="space-y-1 text-xs md:text-sm text-slate-700">
                         <li>• Be specific with your questions for more accurate answers</li>
                         <li>• Reference page numbers or topics from your materials</li>
                         <li>• Ask follow-up questions to dive deeper into concepts</li>
@@ -272,27 +287,27 @@ const ChatPage = () => {
             </div>
           </div>
         ) : currentSession ? (
-            <ChatInterface
-              session={currentSession}
-              onUpdateSession={handleUpdateSession}
-              onDeleteSession={() => handleDeleteSession(currentSession.id)}
-            />
+          <ChatInterface
+            session={currentSession}
+            onUpdateSession={handleUpdateSession}
+            onDeleteSession={() => handleDeleteSession(currentSession.id)}
+          />
 
         ) : (
-          <div className="flex-1 flex items-center justify-center p-8">
+          <div className="flex-1 flex items-center justify-center p-4 md:p-8">
             <div className="text-center max-w-2xl">
-              <div className="w-20 h-20 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
-                <MessageSquare className="h-10 w-10 text-white" />
+              <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 md:mb-6 shadow-lg">
+                <MessageSquare className="h-8 w-8 md:h-10 md:w-10 text-white" />
               </div>
-              <h3 className="text-3xl font-bold text-slate-800 mb-3">
+              <h3 className="text-2xl md:text-3xl font-bold text-slate-800 mb-2 md:mb-3">
                 Start a New Chat
               </h3>
-              <p className="text-slate-600 mb-8 text-lg">
+              <p className="text-slate-600 mb-6 md:mb-8 text-base md:text-lg">
                 Select your study materials and get instant help from your AI tutor
               </p>
 
               {/* Suggested Actions */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 mb-6 md:mb-8">
                 {suggestedPrompts.map((prompt, idx) => {
                   const Icon = prompt.icon;
                   return (
@@ -300,12 +315,12 @@ const ChatPage = () => {
                       key={idx}
                       className="border-2 border-slate-200 hover:border-indigo-300 hover:shadow-md transition-all duration-300 cursor-pointer group"
                     >
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-10 h-10 bg-gradient-to-r ${prompt.gradient} rounded-lg flex items-center justify-center`}>
-                            <Icon className="h-5 w-5 text-white" />
+                      <CardContent className="p-3 md:p-4">
+                        <div className="flex items-center gap-2 md:gap-3">
+                          <div className={`w-8 h-8 md:w-10 md:h-10 bg-gradient-to-r ${prompt.gradient} rounded-lg flex items-center justify-center`}>
+                            <Icon className="h-4 w-4 md:h-5 md:w-5 text-white" />
                           </div>
-                          <p className="text-sm font-medium text-slate-700 text-left group-hover:text-slate-900">
+                          <p className="text-xs md:text-sm font-medium text-slate-700 text-left group-hover:text-slate-900">
                             {prompt.text}
                           </p>
                         </div>
@@ -318,7 +333,7 @@ const ChatPage = () => {
               <Button
                 onClick={handleNewChat}
                 size="lg"
-                className="bg-gradient-to-r text-white from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] px-8"
+                className="bg-gradient-to-r text-white from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] px-6 md:px-8"
               >
                 <MessageSquare className="h-5 w-5 mr-2" />
                 New Chat

@@ -317,22 +317,29 @@ const ProfilePage = () => {
 
               return (
                 <Card key={attempt.id} className="border-2 border-slate-200 hover:border-indigo-300 hover:shadow-lg transition-all duration-300">
-                  <CardContent className="p-5">
-                    <div className="flex items-center justify-between">
+                  <CardContent className="p-4 md:p-5">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                       <div className="flex-1">
-                        <h3 className="text-lg font-bold text-slate-800">{attempt.quiz?.type || 'Quiz'} Quiz</h3>
-                        <p className="text-sm text-slate-600 mt-1">{attempt.pdf?.name || 'Unknown Source'}</p>
+                        <h3 className="text-base md:text-lg font-bold text-slate-800">{attempt.quiz?.type || 'Quiz'} Quiz</h3>
+                        <p className="text-sm text-slate-600 mt-1 line-clamp-1">{attempt.pdf?.name || 'Unknown Source'}</p>
                         <p className="text-xs text-slate-500 mt-1">
                           {formatDate(attempt.completedAt)}
                         </p>
                       </div>
-                      <div className="flex items-center gap-4">
-                        <div className={`px-4 py-2 rounded-xl bg-gradient-to-r ${getGradeColor(percentage)} text-white font-bold text-center`}>
-                          <div className="text-2xl">{percentage.toFixed(0)}%</div>
+                      <div className="flex items-center justify-between md:justify-end gap-3 md:gap-4">
+                        <div className={`px-3 py-2 md:px-4 md:py-2 rounded-xl bg-gradient-to-r ${getGradeColor(percentage)} text-white font-bold text-center flex-shrink-0`}>
+                          <div className="text-xl md:text-2xl">{percentage.toFixed(0)}%</div>
                           <div className="text-xs opacity-90">{attempt.score}/{attempt.maxScore}</div>
                         </div>
-                        <Button onClick={() => handleViewAttempt(attempt)} variant="outline" className="border-2">
-                          <Eye className="h-4 w-4 mr-2" /> Review
+                        <Button 
+                          onClick={() => handleViewAttempt(attempt)} 
+                          variant="outline" 
+                          className="border-2 flex-shrink-0"
+                          size="sm"
+                        >
+                          <Eye className="h-4 w-4 mr-1 md:mr-2" />
+                          <span className="hidden sm:inline">Review</span>
+                          <span className="sm:hidden">View</span>
                         </Button>
                       </div>
                     </div>

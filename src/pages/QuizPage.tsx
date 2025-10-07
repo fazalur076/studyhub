@@ -6,7 +6,7 @@ import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import SourceSelector from '../components/pdf/SourceSelector';
-import {  getAllPDFs, getPDFById, saveQuiz, saveQuizAttempt, savePDF, deletePDF, uploadPDFFile, savePDFText,  getPDFText } from '../services/storage.service';
+import { getAllPDFs, getPDFById, saveQuiz, saveQuizAttempt, savePDF, deletePDF, uploadPDFFile, savePDFText, getPDFText } from '../services/storage.service';
 import { extractTextFromPDF, getPDFMetadata } from '../services/pdf.service';
 import { generateQuiz } from '../services/openai.service';
 import { type PDF } from '../types';
@@ -183,7 +183,7 @@ const QuizPage = () => {
 
       const newQuiz = {
         id: uuidv4(),
-        pdfId: selectedPDFs[0], 
+        pdfId: selectedPDFs[0],
         type: quizType as any,
         questions: allQuestions.map(q => ({ ...q, id: uuidv4() })),
         createdAt: new Date().toISOString()
@@ -325,7 +325,8 @@ const QuizPage = () => {
       {/* Quiz Configuration Card */}
       <Card className="shadow-xl border-0 overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-indigo-100">
-          <div className="flex items-center justify-between">
+          {/* Desktop Layout */}
+          <div className="hidden md:flex md:items-center md:justify-between">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center">
                 <Sparkles className="h-6 w-6 text-white" />
@@ -349,6 +350,33 @@ const QuizPage = () => {
               </Button>
             </div>
           </div>
+
+          {/* Mobile Layout */}
+          <div className="flex items-center flex-col space-y-4 md:hidden">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center">
+                <Sparkles className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <CardTitle className="text-lg">Quiz Configuration</CardTitle>
+                <p className="text-slate-600 text-xs mt-1">Customize your learning experience</p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-center gap-2">
+              <Button
+                onClick={() => setShowUpload(true)}
+                className="bg-gradient-to-r text-white text-xs from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                size="xs"
+              >
+                <Upload className="h-3 w-3 mr-1" />
+                Upload
+              </Button>
+              <Button variant="outline" size="xs" onClick={handleSelectAll} className="text-xs border-2 hover:bg-slate-50">
+                {selectedPDFs.length === pdfs.length ? 'Deselect All' : 'Select All'}
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="p-8 space-y-8">
           {/* Source Selector */}
@@ -356,7 +384,7 @@ const QuizPage = () => {
             pdfs={pdfs}
             selectedPDFs={selectedPDFs}
             onSelectionChange={setSelectedPDFs}
-            onDeletePDF={handleDeletePDF}  // pass deletion function
+            onDeletePDF={handleDeletePDF}
           />
 
           {/* Quiz Type Selection */}
@@ -375,16 +403,14 @@ const QuizPage = () => {
                   <Card
                     key={type.value}
                     onClick={() => setQuizType(type.value)}
-                    className={`cursor-pointer transition-all duration-300 border-2 ${
-                      isSelected
+                    className={`cursor-pointer transition-all duration-300 border-2 ${isSelected
                         ? 'border-indigo-500 shadow-lg scale-105'
                         : 'border-slate-200 hover:border-indigo-300 hover:shadow-md'
-                    }`}
+                      }`}
                   >
                     <CardContent className="p-6 text-center">
-                      <div className={`w-14 h-14 bg-gradient-to-r ${type.gradient} rounded-xl flex items-center justify-center mx-auto mb-3 ${
-                        isSelected ? 'scale-110' : ''
-                      } transition-transform duration-300`}>
+                      <div className={`w-14 h-14 bg-gradient-to-r ${type.gradient} rounded-xl flex items-center justify-center mx-auto mb-3 ${isSelected ? 'scale-110' : ''
+                        } transition-transform duration-300`}>
                         <Icon className="h-7 w-7 text-white" />
                       </div>
                       <h4 className="font-bold text-slate-800 mb-1">{type.label}</h4>
@@ -447,7 +473,7 @@ const QuizPage = () => {
                 <Loader className="animate-spin h-6 w-6 mr-3" />
                 <span className='text-white'>Generating Your Quiz...</span>
               </>
-            ) : ( 
+            ) : (
               <>
                 <Play className="h-6 w-6 mr-3 text-white" />
                 <span className='text-white'>Generate Quiz</span>
@@ -478,11 +504,10 @@ const QuizPage = () => {
           </DialogHeader>
 
           <div
-            className={`relative border-2 border-dashed rounded-xl p-12 text-center transition-all duration-300 ${
-              dragActive
+            className={`relative border-2 border-dashed rounded-xl p-12 text-center transition-all duration-300 ${dragActive
                 ? 'border-indigo-500 bg-indigo-50 scale-105'
                 : 'border-slate-300 hover:border-indigo-400 hover:bg-slate-50'
-            }`}
+              }`}
             onDragEnter={handleDrag}
             onDragLeave={handleDrag}
             onDragOver={handleDrag}
@@ -544,7 +569,7 @@ const QuizPage = () => {
           )}
         </DialogContent>
       </Dialog>
-      
+
       <ConfirmModal
         open={confirmOpen}
         title="Delete PDF?"
