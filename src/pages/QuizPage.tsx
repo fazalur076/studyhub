@@ -200,12 +200,32 @@ const QuizPage = () => {
     const correctAnswers: string[] = [];
 
     currentQuiz.questions.forEach((question: any) => {
-      const userAnswer = answers[question.id]?.toLowerCase().trim();
-      const correctAnswer = question.correctAnswer.toLowerCase().trim();
+      const userRaw = answers[question.id] ?? '';
+      const correctRaw = question.correctAnswer ?? '';
 
-      if (userAnswer === correctAnswer) {
-        score++;
-        correctAnswers.push(question.id);
+      if ((question.type === 'MCQ') && typeof userRaw === 'string') {
+        const userAnswer = userRaw.toLowerCase().trim();
+        const correctAnswer = String(correctRaw).toLowerCase().trim();
+        if (userAnswer === correctAnswer) {
+          score++;
+          correctAnswers.push(question.id);
+        }
+      } else {
+        try {
+          const { evaluateOpenAnswer } = require('../utils/helpers');
+          const result = evaluateOpenAnswer(String(userRaw), String(correctRaw), String(question.explanation ?? ''));
+          if (result.isCorrect) {
+            score++;
+            correctAnswers.push(question.id);
+          }
+        } catch (e) {
+          const userAnswer = String(userRaw).toLowerCase().trim();
+          const correctAnswer = String(correctRaw).toLowerCase().trim();
+          if (userAnswer === correctAnswer) {
+            score++;
+            correctAnswers.push(question.id);
+          }
+        }
       }
     });
 

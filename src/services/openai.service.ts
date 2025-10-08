@@ -28,8 +28,8 @@ const buildQuizPrompt = (
 ): string => {
   const typeInstructions = {
     MCQ: 'Create multiple choice questions with 4 options each. Mark the correct answer clearly.',
-    SAQ: 'Create short answer questions that can be answered in 2-3 sentences.',
-    LAQ: 'Create long answer questions that require detailed explanations (5-7 sentences).',
+    SAQ: 'Create short answer questions that can be answered in 2-3 sentences. Include a "correctAnswer" field containing a concise model answer (1-2 sentences).',
+    LAQ: 'Create long answer questions that require detailed explanations (5-7 sentences). Include a "correctAnswer" field containing a concise model answer summary (3-5 sentences).',
     MIXED: 'Create a mix of MCQs, SAQs, and LAQs.'
   };
 
@@ -55,6 +55,7 @@ CRITICAL REQUIREMENTS:
 7. Questions must be direct and standalone - write as if for a professional exam
 8. Example: Instead of "What is X described in the problem on page 3?" write simply "What is X?"
 9. Grounding: Use ONLY the provided content. Do not invent facts or topics that are not present in the content.
+10. REQUIRED FIELD: Every question (including SAQ and LAQ) MUST include a "correctAnswer" string that represents the expected answer. For SAQ/LAQ, this is a concise model answer (not just a restatement of the question).
 
 Return the response as a **valid JSON object**, strictly following this example format (do not include comments):
 
@@ -102,7 +103,24 @@ export const generateQuiz = async (
 
     const result = JSON.parse(response.choices[0].message.content || '{}');
 
-    let questions: QuizQuestion[] = result.questions || [];
+    // Normalize and ensure required fields exist
+    let questions: QuizQuestion[] = (result.questions || []).map((q: any) => {
+      const normalizedType = (q?.type || '').toUpperCase();
+      const explanation = typeof q?.explanation === 'string' ? q.explanation.trim() : '';
+      let correctAnswer = typeof q?.correctAnswer === 'string' ? q.correctAnswer.trim() : '';
+
+      // If SAQ/LAQ missing correctAnswer, derive a concise answer from the explanation
+      if ((!correctAnswer || correctAnswer.length === 0) && explanation.length > 0 && (normalizedType === 'SAQ' || normalizedType === 'LAQ')) {
+        const firstSentence = explanation.split(/(?<=\.)\s+/)[0]?.trim() || explanation.slice(0, 300).trim();
+        correctAnswer = firstSentence.slice(0, 300);
+      }
+
+      return {
+        ...q,
+        type: normalizedType,
+        correctAnswer
+      } as QuizQuestion;
+    });
     if (questions.length > numQuestions) {
       questions = questions.slice(0, numQuestions);
     }
