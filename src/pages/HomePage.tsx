@@ -1,25 +1,22 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, FileText, MessageSquare, Sparkles, TrendingUp, BookOpen, ChevronRight, File, Loader, X, Trash } from 'lucide-react';
+import { Upload, FileText, MessageSquare, Sparkles, TrendingUp, BookOpen, ChevronRight, Trash } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { savePDF, savePDFText, getAllPDFs, deletePDF, uploadPDFFile } from '../services/storage.service';
 import { getPDFMetadata, extractTextFromPDF } from '../services/pdf.service';
 import { type PDF } from '../types';
-import { Check } from 'lucide-react';
 import { toast } from 'sonner';
 import ConfirmModal from '../components/ui/confirmModal';
 import { v4 as uuidv4 } from 'uuid';
+import PDFUpload from '../components/pdf/PDFUpload';
 
 const HomePage = () => {
   const navigate = useNavigate();
   const [pdfs, setPdfs] = useState<PDF[]>([]);
   const [selectedPDFs, setSelectedPDFs] = useState<string[]>([]);
   const [showUpload, setShowUpload] = useState(false);
-  const [dragActive, setDragActive] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
+  
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pdfToDelete, setPdfToDelete] = useState<string | null>(null);
 
@@ -32,25 +29,6 @@ const HomePage = () => {
   const loadPDFs = async () => {
     const all = await getAllPDFs();
     setPdfs(all);
-  };
-
-  const handleDrag = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      setSelectedFile(e.dataTransfer.files[0]);
-    }
   };
 
   const handleDeletePDF = (pdfId: string) => {
@@ -76,46 +54,29 @@ const HomePage = () => {
     }
   };
 
-  const handleUpload = async () => {
-    if (!selectedFile) return;
-
-    setUploading(true);
-
+  const handleUploadFile = async (file: File) => {
     try {
-      console.log('Uploading PDF to Supabase Storage...');
-      const fileUrl = await uploadPDFFile(selectedFile);
-      console.log('File uploaded successfully:', fileUrl);
-      const meta = await getPDFMetadata(selectedFile);
-      console.log('Extracting text from PDF...');
-      const pdfText = await extractTextFromPDF(selectedFile);
+      const fileUrl = await uploadPDFFile(file);
+      const meta = await getPDFMetadata(file);
+      const pdfText = await extractTextFromPDF(file);
       const id = uuidv4();
       const newPDF: PDF = {
         id,
-        name: selectedFile.name,
+        name: file.name,
         uploadedAt: new Date().toISOString(),
         fileUrl: fileUrl,
-        size: selectedFile.size,
+        size: file.size,
         numPages: meta.numPages || 0,
         totalPages: meta.numPages || 0,
         isSeeded: false,
       };
-
-      console.log('Saving PDF metadata...');
       await savePDF(newPDF);
-
-      console.log('Saving PDF text...');
       await savePDFText(id, pdfText);
-
-      console.log('PDF uploaded successfully!');
-
       await loadPDFs();
-      setSelectedFile(null);
       setShowUpload(false);
     } catch (error) {
       console.error('Error uploading PDF:', error);
       toast.error('Failed to upload PDF. Please try again.');
-    } finally {
-      setUploading(false);
     }
   };
 
@@ -377,99 +338,12 @@ const HomePage = () => {
         cancelText="Cancel"
       />
 
-      {/* Upload Modal */}
-      <Dialog open={showUpload} onOpenChange={setShowUpload}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader className="relative">
-            <DialogTitle className="text-2xl">Upload PDF</DialogTitle>
-            <button
-              onClick={() => setShowUpload(false)}
-              className="absolute top-3 right-3 text-slate-500 hover:text-slate-700 transition-colors"
-              aria-label="Close"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </DialogHeader>
-
-          <div
-            className={`relative border-2 border-dashed rounded-xl p-12 text-center transition-all duration-300 ${dragActive
-              ? 'border-indigo-500 bg-indigo-50 scale-105'
-              : 'border-slate-300 hover:border-indigo-400 hover:bg-slate-50'
-              }`}
-            onDragEnter={handleDrag}
-            onDragLeave={handleDrag}
-            onDragOver={handleDrag}
-            onDrop={handleDrop}
-          >
-            {selectedFile ? (
-              <div className="space-y-4">
-                <div className="w-16 h-16 bg-indigo-100 rounded-xl flex items-center justify-center mx-auto">
-                  <File className="h-8 w-8 text-indigo-600" />
-                </div>
-                <div>
-                  <p className="font-semibold text-slate-800">{selectedFile.name}</p>
-                  <p className="text-sm text-slate-500 mt-1">
-                    {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                  </p>
-                </div>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => setSelectedFile(null)}
-                  disabled={uploading}
-                >
-                  Remove
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="w-16 h-16 bg-slate-100 rounded-xl flex items-center justify-center mx-auto">
-                  <Upload className="h-8 w-8 text-slate-400" />
-                </div>
-                <div>
-                  <p className="text-slate-800 font-medium text-lg">
-                    Drop your PDF here
-                  </p>
-                  <p className="text-slate-500 text-sm mt-2">
-                    or click to browse
-                  </p>
-                  <p className="text-slate-400 text-xs mt-2">
-                    PDF files up to 50MB
-                  </p>
-                </div>
-              </div>
-            )}
-            <input
-              type="file"
-              accept="application/pdf"
-              onChange={(e) => e.target.files && setSelectedFile(e.target.files[0])}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              disabled={uploading}
-            />
-          </div>
-
-          {selectedFile && (
-            <Button
-              onClick={handleUpload}
-              disabled={uploading}
-              className="w-full text-white mt-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
-              size="lg"
-            >
-              {uploading ? (
-                <>
-                  <Loader className="h-5 w-5 mr-2 animate-spin" />
-                  Uploading & Processing...
-                </>
-              ) : (
-                <>
-                  <Upload className="h-5 w-5 mr-2" />
-                  Upload PDF
-                </>
-              )}
-            </Button>
-          )}
-        </DialogContent>
-      </Dialog>
+      {showUpload && (
+        <PDFUpload
+          onUpload={handleUploadFile}
+          onClose={() => setShowUpload(false)}
+        />
+      )}
     </div>
 
   );

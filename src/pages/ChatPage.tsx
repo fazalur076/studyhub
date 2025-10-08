@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MessageSquare, Sparkles, BookOpen, Zap, Target, X } from 'lucide-react';
-import { getAllChatSessions, saveChatSession, getAllPDFs, deleteChatSession } from '../services/storage.service';
+import { MessageSquare, Sparkles, BookOpen, Zap, Target, X, Upload } from 'lucide-react';
+import { getAllChatSessions, saveChatSession, getAllPDFs, deleteChatSession, uploadPDFFile, savePDF, savePDFText, getPDFById, getPDFText } from '../services/storage.service';
 import { type ChatSession, type PDF } from '../types';
 import ChatSidebar from '../components/chat/ChatSidebar';
 import ChatInterface from '../components/chat/ChatInterface';
@@ -10,6 +10,8 @@ import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
+import PDFUpload from '../components/pdf/PDFUpload';
+import { getPDFMetadata, extractTextFromPDF } from '../services/pdf.service';
 
 const ChatPage = () => {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
@@ -17,6 +19,7 @@ const ChatPage = () => {
   const [pdfs, setPdfs] = useState<PDF[]>([]);
   const [selectedPDFs, setSelectedPDFs] = useState<string[]>([]);
   const [showSourceSelector, setShowSourceSelector] = useState(false);
+  const [showUpload, setShowUpload] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const navigate = useNavigate();
@@ -48,6 +51,32 @@ const ChatPage = () => {
     setShowSourceSelector(true);
     setCurrentSession(null);
     setMobileSidebarOpen(false);
+  };
+  const handleUploadFile = async (file: File) => {
+    try {
+      const fileUrl = await uploadPDFFile(file);
+      const meta = await getPDFMetadata(file);
+      const pdfText = await extractTextFromPDF(file);
+      const id = uuidv4();
+      const newPDF: PDF = {
+        id,
+        name: file.name,
+        uploadedAt: new Date().toISOString(),
+        fileUrl: fileUrl,
+        size: file.size,
+        numPages: meta.numPages || 0,
+        totalPages: meta.numPages || 0,
+        isSeeded: false,
+      };
+      await savePDF(newPDF);
+      await savePDFText(id, pdfText);
+      const allPDFs = await getAllPDFs();
+      setPdfs(allPDFs);
+      setShowUpload(false);
+    } catch (error) {
+      console.error('Error uploading PDF:', error);
+      toast.error('Failed to upload PDF. Please try again.');
+    }
   };
 
   const handleStartChat = async () => {
@@ -217,12 +246,8 @@ const ChatPage = () => {
                     <div className="text-center py-8 md:py-12">
                       <BookOpen className="h-12 w-12 md:h-16 md:w-16 text-slate-300 mx-auto mb-4" />
                       <p className="text-slate-600 mb-4 text-sm md:text-base">No PDFs uploaded yet</p>
-                      <Button
-                        variant="outline"
-                        className="border-2 hover:bg-slate-50"
-                        size="sm"
-                      >
-                        Upload Your First PDF
+                      <Button variant="outline" className="border-2 hover:bg-slate-50" size="sm" onClick={() => setShowUpload(true)}>
+                        <Upload className="h-4 w-4 mr-1" /> Upload Your First PDF
                       </Button>
                     </div>
                   ) : (
@@ -379,6 +404,9 @@ const ChatPage = () => {
           </div>
         )}
       </div>
+      {showUpload && (
+        <PDFUpload onUpload={handleUploadFile} onClose={() => setShowUpload(false)} />
+      )}
     </div>
   );
 };
