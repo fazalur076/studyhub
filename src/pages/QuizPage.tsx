@@ -161,13 +161,21 @@ const QuizPage = () => {
         throw new Error('No text extracted from selected PDFs');
       }
 
-      const questionsPerPDF = Math.max(1, Math.floor(numQuestions / selectedPDFs.length));
-      const remainder = numQuestions % selectedPDFs.length;
+      const validIdSet = new Set(pdfs.map(p => p.id));
+      const activeSelected = selectedPDFs.filter(id => validIdSet.has(id));
+      if (activeSelected.length === 0) {
+        throw new Error('Selected PDFs are no longer available. Please reselect.');
+      }
+
+      const questionsPerPDF = Math.max(1, Math.floor(numQuestions / activeSelected.length));
+      const remainder = numQuestions % activeSelected.length;
 
       const allQuestions: any[] = [];
 
-      for (let i = 0; i < pdfTexts.length; i++) {
-        const { text: pdfContent, pdf } = pdfTexts[i];
+      const pdfTextsFiltered = pdfTexts.filter(({ pdf }) => activeSelected.includes(pdf.id));
+
+      for (let i = 0; i < pdfTextsFiltered.length; i++) {
+        const { text: pdfContent, pdf } = pdfTextsFiltered[i];
         const numQ = questionsPerPDF + (i < remainder ? 1 : 0);
 
         const questions = await generateQuiz({
@@ -177,14 +185,11 @@ const QuizPage = () => {
           difficulty: 'medium'
         });
 
-        // Grounding filter: keep only well-formed, content-grounded questions
         const grounded = (questions || []).filter(q => {
           const hasText = typeof q?.question === 'string' && q.question.trim().length > 0;
           const hasAnswer = typeof q?.correctAnswer === 'string' && q.correctAnswer.trim().length > 0;
           const hasExplanation = typeof q?.explanation === 'string' && q.explanation.trim().length > 0;
-          // If MCQ, must have at least 3 options
           const mcqOk = q?.type !== 'MCQ' || (Array.isArray(q?.options) && q.options.filter((o: string) => typeof o === 'string' && o.trim()).length >= 3);
-          // Topic sanity: short and non-generic if present
           const topicOk = !q?.topic || (q.topic.length <= 40 && !/chapter|contents|index|exercise/i.test(q.topic));
           return hasText && hasAnswer && hasExplanation && mcqOk && topicOk;
         });
@@ -204,7 +209,7 @@ const QuizPage = () => {
 
       const newQuiz = {
         id: uuidv4(),
-        pdfId: selectedPDFs[0],
+        pdfId: activeSelected[0],
         type: quizType as any,
         questions: allQuestions.map(q => ({ ...q, id: uuidv4() })),
         createdAt: new Date().toISOString()
