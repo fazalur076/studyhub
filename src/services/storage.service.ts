@@ -97,6 +97,19 @@ export const deletePDF = async (pdfId: string): Promise<void> => {
   try {
     const pdf = await getPDFById(pdfId);
 
+    try {
+      const { error: chatDeleteError } = await supabase
+        .from('chat_sessions')
+        .delete()
+        .contains('pdf_context', [pdfId]);
+
+      if (chatDeleteError) {
+        console.warn('Error deleting related chat sessions:', chatDeleteError);
+      }
+    } catch (e) {
+      console.warn('Failed to delete related chat sessions:', e);
+    }
+
     if (pdf && (pdf as any).fileUrl) {
       const url = (pdf as any).fileUrl;
       const urlParts = url.split('/');
@@ -121,7 +134,7 @@ export const deletePDF = async (pdfId: string): Promise<void> => {
       throw error;
     }
 
-    console.log(`Deleted PDF ${pdfId} and related data`);
+    console.log(`Deleted PDF ${pdfId} and related chats/data`);
   } catch (err) {
     console.error('Error deleting PDF:', err);
     throw err;
