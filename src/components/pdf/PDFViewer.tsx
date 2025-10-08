@@ -190,54 +190,54 @@ const PDFViewer = ({ pdfUrl: pdfId, onLoadSuccess }: PDFViewerProps) => {
 
   return (
     <div className={`bg-white shadow-xl flex flex-col ${isFullscreen ? 'fixed inset-0 z-50' : 'rounded-lg h-full'}`}>
-      <div className="flex items-center justify-between p-4 border-b-2 border-slate-200 bg-gradient-to-r from-slate-50 to-slate-100 flex-shrink-0">
-        <div className="flex items-center space-x-3">
+      <div className="flex items-center justify-between p-2 md:p-4 border-b-2 border-slate-200 bg-gradient-to-r from-slate-50 to-slate-100 flex-shrink-0">
+        <div className="flex items-center space-x-2 md:space-x-3">
           <div className="flex items-center bg-white rounded-lg shadow-sm border border-slate-200">
             <button
               onClick={goToPrevPage}
               disabled={pageNumber <= 1}
-              className="p-2.5 hover:bg-indigo-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 rounded-l-lg group"
+              className="p-1.5 md:p-2.5 hover:bg-indigo-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 rounded-l-lg group"
               title="Previous page"
             >
-              <ChevronLeft className="h-5 w-5 text-slate-700 group-hover:text-indigo-600" />
+              <ChevronLeft className="h-4 w-4 md:h-5 md:w-5 text-slate-700 group-hover:text-indigo-600" />
             </button>
 
-            <div className="flex items-center px-3 border-x border-slate-200">
+            <div className="flex items-center px-2 md:px-3 border-x border-slate-200">
               <input
                 type="number"
                 min="1"
                 max={numPages}
                 value={pageNumber}
                 onChange={(e) => goToPage(parseInt(e.target.value) || 1)}
-                className="w-12 text-center text-sm font-semibold text-slate-700 bg-transparent focus:outline-none focus:text-indigo-600"
+                className="w-10 md:w-12 text-center text-xs md:text-sm font-semibold text-slate-700 bg-transparent focus:outline-none focus:text-indigo-600"
               />
-              <span className="text-sm text-slate-500 ml-1">/ {numPages}</span>
+              <span className="text-xs md:text-sm text-slate-500 ml-1">/ {numPages}</span>
             </div>
 
             <button
               onClick={goToNextPage}
               disabled={pageNumber >= numPages}
-              className="p-2.5 hover:bg-indigo-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 rounded-r-lg group"
+              className="p-1.5 md:p-2.5 hover:bg-indigo-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 rounded-r-lg group"
               title="Next page"
             >
-              <ChevronRight className="h-5 w-5 text-slate-700 group-hover:text-indigo-600" />
+              <ChevronRight className="h-4 w-4 md:h-5 md:w-5 text-slate-700 group-hover:text-indigo-600" />
             </button>
           </div>
         </div>
 
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-2 md:space-x-3">
           <div className="flex items-center bg-white rounded-lg shadow-sm border border-slate-200">
             <button
               onClick={zoomOut}
-              className="p-2.5 hover:bg-indigo-50 transition-all duration-200 rounded-l-lg group"
+              className="p-1.5 md:p-2.5 hover:bg-indigo-50 transition-all duration-200 rounded-l-lg group"
               title="Zoom out"
             >
-              <ZoomOut className="h-5 w-5 text-slate-700 group-hover:text-indigo-600" />
+              <ZoomOut className="h-4 w-4 md:h-5 md:w-5 text-slate-700 group-hover:text-indigo-600" />
             </button>
 
             <button
               onClick={resetZoom}
-              className="px-4 border-x border-slate-200 text-sm font-semibold text-slate-700 hover:text-indigo-600 hover:bg-indigo-50 transition-all duration-200"
+              className="px-2 md:px-4 border-x border-slate-200 text-xs md:text-sm font-semibold text-slate-700 hover:text-indigo-600 hover:bg-indigo-50 transition-all duration-200"
               title="Reset zoom"
             >
               {Math.round(scale * 100)}%
@@ -245,29 +245,29 @@ const PDFViewer = ({ pdfUrl: pdfId, onLoadSuccess }: PDFViewerProps) => {
 
             <button
               onClick={zoomIn}
-              className="p-2.5 hover:bg-indigo-50 transition-all duration-200 rounded-r-lg group"
+              className="p-1.5 md:p-2.5 hover:bg-indigo-50 transition-all duration-200 rounded-r-lg group"
               title="Zoom in"
             >
-              <ZoomIn className="h-5 w-5 text-slate-700 group-hover:text-indigo-600" />
+              <ZoomIn className="h-4 w-4 md:h-5 md:w-5 text-slate-700 group-hover:text-indigo-600" />
             </button>
           </div>
 
           <button
             onClick={toggleFullscreen}
-            className="p-2.5 bg-white rounded-lg shadow-sm border border-slate-200 hover:bg-indigo-50 transition-all duration-200 group"
+            className="p-1.5 md:p-2.5 bg-white rounded-lg shadow-sm border border-slate-200 hover:bg-indigo-50 transition-all duration-200 group"
             title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
           >
             {isFullscreen ? (
-              <Minimize2 className="h-5 w-5 text-slate-700 group-hover:text-indigo-600" />
+              <Minimize2 className="h-4 w-4 md:h-5 md:w-5 text-slate-700 group-hover:text-indigo-600" />
             ) : (
-              <Maximize2 className="h-5 w-5 text-slate-700 group-hover:text-indigo-600" />
+              <Maximize2 className="h-4 w-4 md:h-5 md:w-5 text-slate-700 group-hover:text-indigo-600" />
             )}
           </button>
         </div>
       </div>
 
       {/* PDF Display */}
-      <div className="flex-1 overflow-auto flex justify-center p-6 bg-gradient-to-br from-slate-100 to-slate-200">
+      <div className="flex-1 overflow-auto flex justify-center p-3 md:p-6 bg-gradient-to-br from-slate-100 to-slate-200">
         <Document
           file={actualPdfUrl}
           onLoadSuccess={onDocumentLoadSuccess}
@@ -307,7 +307,7 @@ const PDFViewer = ({ pdfUrl: pdfId, onLoadSuccess }: PDFViewerProps) => {
         </Document>
       </div>
 
-      <div className="px-4 py-2 border-t border-slate-200 bg-slate-50 flex items-center justify-between text-xs text-slate-600 flex-shrink-0">
+      <div className="px-3 md:px-4 py-1.5 md:py-2 border-t border-slate-200 bg-slate-50 flex items-center justify-between text-[10px] md:text-xs text-slate-600 flex-shrink-0">
         <span>Page {pageNumber} of {numPages}</span>
         <span>Zoom: {Math.round(scale * 100)}%</span>
       </div>
