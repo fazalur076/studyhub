@@ -193,7 +193,8 @@ export const getQuizzesByPDF = async (pdfId: string): Promise<Quiz[]> => {
     id: row.id,
     pdfId: row.pdf_id,
     questions: row.questions,
-    createdAt: row.created_at
+    createdAt: row.created_at,
+    type: row.type || 'MIXED'
   }));
 };
 
@@ -214,7 +215,8 @@ export const getQuizById = async (id: string): Promise<Quiz | undefined> => {
     id: data.id,
     pdfId: data.pdf_id,
     questions: data.questions,
-    createdAt: data.created_at
+    createdAt: data.created_at,
+    type: data.type || 'MIXED'
   };
 };
 
@@ -259,7 +261,8 @@ export const getAttemptsByQuiz = async (quizId: string): Promise<QuizAttempt[]> 
     score: row.score,
     maxScore: row.max_score,
     correctAnswers: row.correct_answers,
-    completedAt: row.completed_at
+    completedAt: row.completed_at,
+    userAnswers: row.user_answers || {}
   }));
 };
 
@@ -281,7 +284,8 @@ export const getAllAttempts = async (): Promise<QuizAttempt[]> => {
     score: row.score,
     maxScore: row.max_score,
     correctAnswers: row.correct_answers,
-    completedAt: row.completed_at
+    completedAt: row.completed_at,
+    userAnswers: row.user_answers || {}
   }));
 };
 
@@ -305,12 +309,29 @@ export const calculateUserProgress = async (): Promise<UserProgress> => {
 
   const topicScores: Record<string, { correct: number; total: number }> = {};
 
+  const normalizeTopic = (raw: string | undefined): string => {
+    if (!raw) return 'General';
+    const cleaned = raw
+      .toLowerCase()
+      .replace(/chapter\s*\d+|section\s*\d+|exercise\s*\d+/g, '')
+      .replace(/\b(index|contents|table of contents|acknowledg(e)?ments?)\b/g, '')
+      .replace(/[^a-z0-9\s'\-()]/g, '')
+      .replace(/\s{2,}/g, ' ')
+      .trim();
+    // collapse overly generic headings
+    if (!cleaned || cleaned.length < 3) return 'General';
+    return cleaned
+      .split(' ')
+      .slice(0, 6) // keep it concise
+      .join(' ');
+  };
+
   for (const attempt of attempts) {
     const quiz = await getQuizById(attempt.quizId);
     if (!quiz) continue;
 
     for (const question of quiz.questions) {
-      const topic = question.topic;
+      const topic = normalizeTopic(question.topic);
       if (!topicScores[topic]) {
         topicScores[topic] = { correct: 0, total: 0 };
       }
@@ -377,7 +398,8 @@ export const getAllChatSessions = async (): Promise<ChatSession[]> => {
     messages: row.messages || [],
     createdAt: row.created_at,
     updatedAt: row.updated_at,
-    pdfContext: row.pdf_context || row.pdfContext || []
+    pdfContext: row.pdf_context || row.pdfContext || [],
+    title: row.title || 'New Chat'
   }));
 };
 
@@ -399,7 +421,8 @@ export const getChatSession = async (id: string): Promise<ChatSession | undefine
     messages: data.messages || [],
     createdAt: data.created_at,
     updatedAt: data.updated_at,
-    pdfContext: data.pdf_context || data.pdfContext || []
+    pdfContext: data.pdf_context || data.pdfContext || [],
+    title: data.title || 'New Chat'
   };
 };
 

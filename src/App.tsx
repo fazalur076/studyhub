@@ -7,6 +7,7 @@ import ChatPage from './pages/ChatPage';
 import ProfilePage from './pages/ProfilePage';
 import LoginPage from './pages/login';
 import { supabase } from './services/supabaseClient';
+import { Toaster } from 'sonner';
 
 function App() {
   const [user, setUser] = useState<any>(null);
@@ -31,6 +32,7 @@ function App() {
 
   return (
     <BrowserRouter>
+      <Toaster richColors position="top-center" />
       <Routes>
         {/* If no user, redirect to login */}
         {!user && <Route path="*" element={<LoginPage />} />}

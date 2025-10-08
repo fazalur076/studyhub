@@ -28,10 +28,16 @@ const ChatMessageComponent = ({ message }: ChatMessageProps) => {
           <div className={`mt-3 flex items-center gap-2 text-xs ${isUser ? 'text-indigo-100' : 'text-slate-500'}`}>
             <Clock className="h-3 w-3" />
             <span>
-              {typeof message.timestamp === 'string'
-                ? new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                : message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-              }
+              {(() => {
+                try {
+                  const d = typeof message.timestamp === 'string'
+                    ? new Date(message.timestamp)
+                    : new Date(message.timestamp as unknown as string);
+                  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                } catch {
+                  return '';
+                }
+              })()}
             </span>
           </div>
 
@@ -45,7 +51,7 @@ const ChatMessageComponent = ({ message }: ChatMessageProps) => {
                 {message.citations.map((citation, idx) => (
                   <div
                     key={idx}
-                    className={`group/cite bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-3 md:p-4 text-sm border border-slate-200 hover:border-indigo-300 hover:shadow-md transition-all duration-300 cursor-pointer`}
+                    className={`group/cite bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-3 md:p-4 text-sm border border-slate-200 hover:border-indigo-300 hover:shadow-md transition-all duration-300`}
                   >
                     <div className="flex items-center justify-between mb-2">
                       <span className={`font-medium text-xs md:text-sm ${isUser ? 'text-indigo-700' : 'text-slate-800'}`}>

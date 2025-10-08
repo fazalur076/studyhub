@@ -23,7 +23,7 @@ const cleanPDFText = (text: string): string => {
 
 const isRelevantText = (text: string): boolean => {
   const irrelevantPatterns = /(acknowledge|certificate|table of contents|record|content organisation|signature|index|date|student name|guide name)/i;
-  return text.length > 200 && !irrelevantPatterns.test(text);
+  return text.length > 80 && !irrelevantPatterns.test(text);
 };
 
 const extractTextFromPDFDoc = async (pdf: any): Promise<string> => {
@@ -93,8 +93,8 @@ export const getPDFMetadata = async (file: File): Promise<{
 
     return {
       numPages: pdf.numPages,
-      title: metadata.info?.Title,
-      author: metadata.info?.Author,
+      title: (metadata as any).info?.Title,
+      author: (metadata as any).info?.Author,
     };
   } catch (error) {
     console.error('Error getting PDF metadata:', error);
@@ -113,8 +113,8 @@ export const getPDFMetadataFromURL = async (url: string): Promise<{
 
     return {
       numPages: pdf.numPages,
-      title: metadata.info?.Title,
-      author: metadata.info?.Author,
+      title: (metadata as any).info?.Title,
+      author: (metadata as any).info?.Author,
     };
   } catch (error) {
     console.error('Error getting PDF metadata from URL:', error);
@@ -125,8 +125,8 @@ export const getPDFMetadataFromURL = async (url: string): Promise<{
 export const chunkText = (
   text: string,
   pdfId: string,
-  chunkSize: number = 1000,
-  overlap: number = 200
+  chunkSize: number = 1400,
+  overlap: number = 250
 ): PDFChunk[] => {
   const chunks: PDFChunk[] = [];
   const pageMatches = text.split(/\[Page (\d+)\]/);
@@ -152,7 +152,7 @@ export const chunkText = (
 export const findRelevantChunks = (
   query: string,
   chunks: PDFChunk[],
-  topK: number = 5
+  topK: number = 8
 ): PDFChunk[] => {
   const queryLower = query.toLowerCase();
   const queryWords = queryLower.split(/\s+/).filter(w => w.length > 3);
@@ -171,8 +171,24 @@ export const findRelevantChunks = (
     return { chunk, score };
   });
 
-  return scoredChunks
-    .sort((a, b) => b.score - a.score)
-    .slice(0, topK)
-    .map(item => item.chunk);
+  const sorted = scoredChunks.sort((a, b) => b.score - a.score).map(s => s.chunk);
+
+  // Ensure page diversity: pick at most one per page on first pass, then fill
+  const seenPages = new Set<number>();
+  const diverse: PDFChunk[] = [];
+  for (const ch of sorted) {
+    if (!seenPages.has(ch.page)) {
+      diverse.push(ch);
+      seenPages.add(ch.page);
+      if (diverse.length >= topK) break;
+    }
+  }
+  if (diverse.length < topK) {
+    for (const ch of sorted) {
+      if (diverse.includes(ch)) continue;
+      diverse.push(ch);
+      if (diverse.length >= topK) break;
+    }
+  }
+  return diverse.slice(0, topK);
 };

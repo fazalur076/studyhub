@@ -37,6 +37,12 @@ const ChatInterface = ({ session, onUpdateSession, onDeleteSession, onOpenSideba
   }, [session.messages]);
 
   useEffect(() => {
+    if (loading) {
+      scrollToBottom();
+    }
+  }, [loading]);
+
+  useEffect(() => {
     adjustTextareaHeight();
   }, [input]);
 
@@ -77,7 +83,7 @@ const ChatInterface = ({ session, onUpdateSession, onDeleteSession, onOpenSideba
         }
 
         if (pdfText) {
-          const chunks = chunkText(pdfText, pdfId);
+          const chunks = chunkText(pdfText, pdfId, 1400, 250);
           allChunks.push(...chunks);
         }
       }
@@ -141,10 +147,108 @@ const ChatInterface = ({ session, onUpdateSession, onDeleteSession, onOpenSideba
     setLoading(true);
 
     try {
-      const relevantChunks = findRelevantChunks(input, pdfChunks, 5);
+      // Add a temporary assistant placeholder to show immediate feedback
+      const tempAssistantId = `temp-${Date.now()}`;
+      const placeholderAssistant: ChatMessage = {
+        id: tempAssistantId,
+        role: 'assistant',
+        content: 'Thinking…',
+        timestamp: new Date().toISOString()
+      };
+
+      onUpdateSession({
+        ...updatedSession,
+        messages: [...updatedSession.messages, placeholderAssistant],
+        updatedAt: new Date().toISOString()
+      });
+      scrollToBottom();
+
+      const relevantChunks = findRelevantChunks(input, pdfChunks, 8);
 
       if (relevantChunks.length === 0) {
         throw new Error('No relevant content found in the PDFs');
+      }
+
+      // Intercept generic prompts and ask for clarification with suggestions
+      const genericPrompts = new Set([
+        'explain this concept in simple terms',
+        'what are the key points?',
+        'give me an example',
+        'how does this work?',
+        'explain in simple terms',
+        'explain this concept'
+      ]);
+
+      const isGeneric = genericPrompts.has(input.trim().toLowerCase());
+
+      if (isGeneric) {
+        const deriveCandidateTopics = (chunks: PDFChunk[], max: number): string[] => {
+          const stopwords = new Set(['of','the','a','an','in','on','at','by','for','to','from','and','or','is','are','be','with','into','than']);
+          const keywords = /(defect|reaction|theory|effect|law|compound|equilibrium|acid|base|bond|structure|kinetic|electro|oxidation|reduction|catalysis|enthalpy|entropy|rate|buffer|ion)/i;
+          const candidates = new Map<string, number>();
+
+          const cleanPhrase = (phrase: string): string | null => {
+            const tokens = phrase
+              .toLowerCase()
+              .split(/\s+/)
+              .filter(Boolean);
+            while (tokens.length && stopwords.has(tokens[0])) tokens.shift();
+            while (tokens.length && stopwords.has(tokens[tokens.length - 1])) tokens.pop();
+            if (tokens.length < 2) return null;
+            const trimmed = tokens.join(' ');
+            if (!keywords.test(trimmed)) return null;
+            const titled = tokens
+              .map((t, idx) => stopwords.has(t) && idx !== 0 ? t : t.charAt(0).toUpperCase() + t.slice(1))
+              .join(' ');
+            return titled;
+          };
+
+          for (const ch of chunks) {
+            const words = ch.content.split(/[^A-Za-z0-9\-()']/).filter(Boolean);
+            for (let i = 0; i < words.length; i++) {
+              if (!keywords.test(words[i])) continue;
+              const start = Math.max(0, i - 2);
+              const end = Math.min(words.length, i + 3);
+              const windowPhrase = words.slice(start, end).join(' ');
+              const cleaned = cleanPhrase(windowPhrase);
+              if (cleaned) {
+                candidates.set(cleaned, (candidates.get(cleaned) || 0) + 1);
+              }
+            }
+          }
+
+          const ranked = [...candidates.entries()]
+            .sort((a, b) => b[1] - a[1] || b[0].length - a[0].length || a[0].localeCompare(b[0]))
+            .map(([k]) => k)
+            .filter((v, idx, arr) => arr.findIndex(x => x.toLowerCase() === v.toLowerCase()) === idx)
+            .slice(0, max);
+
+          return ranked;
+        };
+
+        const suggestions = deriveCandidateTopics(relevantChunks, 6);
+        const suggestionText = suggestions.length
+          ? `Here are a few topics I can explain right away:\n• ${suggestions.join('\n• ')}`
+          : 'Tell me the exact concept (e.g., Common Ion Effect, Collision Theory, Schottky Defect).';
+
+        const assistantMessage: ChatMessage = {
+          id: `msg-${Date.now()}`,
+          role: 'assistant',
+          content: `I can help best if you mention the specific concept. ${suggestionText}`,
+          timestamp: new Date().toISOString()
+        };
+
+        const finalSession = {
+          ...updatedSession,
+          messages: [
+            ...updatedSession.messages.filter(m => m.id !== tempAssistantId),
+            assistantMessage
+          ],
+          updatedAt: new Date().toISOString()
+        };
+
+        onUpdateSession(finalSession);
+        return;
       }
 
       const response = await generateChatResponse({
@@ -187,7 +291,10 @@ const ChatInterface = ({ session, onUpdateSession, onDeleteSession, onOpenSideba
 
       const errorSession = {
         ...updatedSession,
-        messages: [...updatedSession.messages, errorMessage],
+        messages: [
+          ...updatedSession.messages.filter(m => !m.id.startsWith('temp-')),
+          errorMessage
+        ],
         updatedAt: new Date().toISOString()
       };
 

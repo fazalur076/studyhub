@@ -350,14 +350,14 @@ const ChatPage = () => {
                   return (
                     <Card
                       key={idx}
-                      className="border-2 border-slate-200 hover:border-indigo-300 hover:shadow-md transition-all duration-300 cursor-pointer group"
+                      className="border-2 border-slate-200 transition-colors duration-200"
                     >
                       <CardContent className="p-3 md:p-4">
                         <div className="flex items-center gap-2 md:gap-3">
                           <div className={`w-8 h-8 md:w-10 md:h-10 bg-gradient-to-r ${prompt.gradient} rounded-lg flex items-center justify-center`}>
                             <Icon className="h-4 w-4 md:h-5 md:w-5 text-white" />
                           </div>
-                          <p className="text-xs md:text-sm font-medium text-slate-700 text-left group-hover:text-slate-900">
+                          <p className="text-xs md:text-sm font-medium text-slate-700 text-left">
                             {prompt.text}
                           </p>
                         </div>

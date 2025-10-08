@@ -45,11 +45,16 @@ CRITICAL REQUIREMENTS:
 1. Questions should test conceptual understanding, not just recall
 2. Store page numbers ONLY in the "pageReference" field - NEVER mention pages in the question text
 3. Provide detailed explanations for each answer
-4. Identify the topic/concept being tested
+4. Identify the topic/concept being tested in the "topic" field with these constraints:
+   - Use a concise academic concept (e.g., "Newton's laws of motion", "Cell membrane transport")
+   - Do NOT include chapter numbers, section titles, or generic headers (e.g., "Chapter 2", "Index", "Contents")
+   - Avoid long phrases; keep it under 5 words when possible
+   - Do NOT include words like: chapter, exercise, section, content, topic, index, table of contents
 5. For MCQs, ensure distractors are plausible
 6. FORBIDDEN PHRASES in question text: "Question No.", "from the textbook", "based on the content", "according to the passage", "described in the problem", "on page X", "in the text", "mentioned above"
 7. Questions must be direct and standalone - write as if for a professional exam
 8. Example: Instead of "What is X described in the problem on page 3?" write simply "What is X?"
+9. Grounding: Use ONLY the provided content. Do not invent facts or topics that are not present in the content.
 
 Return the response as a **valid JSON object**, strictly following this example format (do not include comments):
 
@@ -75,7 +80,7 @@ export const generateQuiz = async (
 ): Promise<QuizQuestion[]> => {
   const { pdfContent, quizType, numQuestions, difficulty = 'medium' } = options;
 
-  const prompt = buildQuizPrompt(pdfContent, quizType, numQuestions, difficulty);
+  const prompt = buildQuizPrompt(pdfContent, quizType as QuizType, numQuestions, difficulty);
 
   try {
     const response = await openai.chat.completions.create({
@@ -128,7 +133,7 @@ async function generateQuizWithFallback(
     fallbackModel: string
   ): Promise<QuizQuestion[]> {
     const { pdfContent, quizType, numQuestions, difficulty = 'medium' } = options;
-    const prompt = buildQuizPrompt(pdfContent, quizType, numQuestions, difficulty);
+    const prompt = buildQuizPrompt(pdfContent, quizType as QuizType, numQuestions, difficulty);
     try {
       const response = await openai.chat.completions.create({
         model: fallbackModel,
@@ -170,7 +175,8 @@ const buildChatPrompt = (
 ): string => {
   const context = chunks
     .map(chunk => `[Page ${chunk.page}]\n${chunk.content}`)
-    .join('\n\n');
+    .join('\n\n')
+    .slice(0, 12000); // keep prompt within safe window while allowing more content
 
   return `
 User Question: ${message}
@@ -198,6 +204,9 @@ const extractCitations = (
       const quoteMatch = response.match(new RegExp(`page ${pageNum}[^'"]*['"]([^'"]{20,150})['"]`, 'i'));
       const snippet = quoteMatch ? quoteMatch[1] : relevantChunk.content.slice(0, 100);
       
+      // de-duplicate by page/pdfId
+      if (citations.some(c => c.page === pageNum && c.pdfId === relevantChunk.pdfId)) continue;
+
       citations.push({
         page: pageNum,
         snippet,

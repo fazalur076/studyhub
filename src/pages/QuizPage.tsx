@@ -177,7 +177,19 @@ const QuizPage = () => {
           difficulty: 'medium'
         });
 
-        const questionsWithPDFInfo = questions.map(q => ({
+        // Grounding filter: keep only well-formed, content-grounded questions
+        const grounded = (questions || []).filter(q => {
+          const hasText = typeof q?.question === 'string' && q.question.trim().length > 0;
+          const hasAnswer = typeof q?.correctAnswer === 'string' && q.correctAnswer.trim().length > 0;
+          const hasExplanation = typeof q?.explanation === 'string' && q.explanation.trim().length > 0;
+          // If MCQ, must have at least 3 options
+          const mcqOk = q?.type !== 'MCQ' || (Array.isArray(q?.options) && q.options.filter((o: string) => typeof o === 'string' && o.trim()).length >= 3);
+          // Topic sanity: short and non-generic if present
+          const topicOk = !q?.topic || (q.topic.length <= 40 && !/chapter|contents|index|exercise/i.test(q.topic));
+          return hasText && hasAnswer && hasExplanation && mcqOk && topicOk;
+        });
+
+        const questionsWithPDFInfo = grounded.map(q => ({
           ...q,
           pdfId: pdf.id,
           pdfName: pdf.name
