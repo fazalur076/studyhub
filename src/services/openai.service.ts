@@ -100,10 +100,8 @@ export const generateQuiz = async (
       temperature: 0.7
     });
 
-    // Parse AI response
     const result = JSON.parse(response.choices[0].message.content || '{}');
 
-    // Ensure number of questions requested is respected
     let questions: QuizQuestion[] = result.questions || [];
     if (questions.length > numQuestions) {
       questions = questions.slice(0, numQuestions);
@@ -113,7 +111,6 @@ export const generateQuiz = async (
   } catch (error: any) {
     console.error('Error generating quiz:', error);
 
-    // Fallback if model decommissioned
     if (
       error?.code === 'model_decommissioned' &&
       MODEL_FALLBACKS[import.meta.env.VITE_AI_MODEL]
@@ -176,7 +173,7 @@ const buildChatPrompt = (
   const context = chunks
     .map(chunk => `[Page ${chunk.page}]\n${chunk.content}`)
     .join('\n\n')
-    .slice(0, 12000); // keep prompt within safe window while allowing more content
+    .slice(0, 12000);
 
   return `
 User Question: ${message}
@@ -204,7 +201,6 @@ const extractCitations = (
       const quoteMatch = response.match(new RegExp(`page ${pageNum}[^'"]*['"]([^'"]{20,150})['"]`, 'i'));
       const snippet = quoteMatch ? quoteMatch[1] : relevantChunk.content.slice(0, 100);
       
-      // de-duplicate by page/pdfId
       if (citations.some(c => c.page === pageNum && c.pdfId === relevantChunk.pdfId)) continue;
 
       citations.push({
@@ -301,7 +297,6 @@ async function generateChatResponseWithFallback(
   }
 }
 
-// Get YouTube video recommendations
 export const getVideoRecommendations = async (
   topic: string,
   additionalContext?: string

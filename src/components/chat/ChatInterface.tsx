@@ -147,7 +147,6 @@ const ChatInterface = ({ session, onUpdateSession, onDeleteSession, onOpenSideba
     setLoading(true);
 
     try {
-      // Add a temporary assistant placeholder to show immediate feedback
       const tempAssistantId = `temp-${Date.now()}`;
       const placeholderAssistant: ChatMessage = {
         id: tempAssistantId,
@@ -169,7 +168,6 @@ const ChatInterface = ({ session, onUpdateSession, onDeleteSession, onOpenSideba
         throw new Error('No relevant content found in the PDFs');
       }
 
-      // Intercept generic prompts and ask for clarification with suggestions
       const genericPrompts = new Set([
         'explain this concept in simple terms',
         'what are the key points?',

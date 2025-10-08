@@ -318,11 +318,10 @@ export const calculateUserProgress = async (): Promise<UserProgress> => {
       .replace(/[^a-z0-9\s'\-()]/g, '')
       .replace(/\s{2,}/g, ' ')
       .trim();
-    // collapse overly generic headings
     if (!cleaned || cleaned.length < 3) return 'General';
     return cleaned
       .split(' ')
-      .slice(0, 6) // keep it concise
+      .slice(0, 6)
       .join(' ');
   };
 

@@ -173,7 +173,6 @@ export const findRelevantChunks = (
 
   const sorted = scoredChunks.sort((a, b) => b.score - a.score).map(s => s.chunk);
 
-  // Ensure page diversity: pick at most one per page on first pass, then fill
   const seenPages = new Set<number>();
   const diverse: PDFChunk[] = [];
   for (const ch of sorted) {

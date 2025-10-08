@@ -111,7 +111,6 @@ const QuizInterface = ({
       {/* Sticky Bottom Actions */}
       <Card className="shadow-2xl border-0 sticky bottom-4 bg-white/95 backdrop-blur-md">
         <CardContent className="p-6">
-          {/* Hide pre-submit warning block to reduce clutter */}
 
           <div className="flex gap-4">
             <Button
