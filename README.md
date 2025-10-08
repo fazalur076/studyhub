@@ -9,7 +9,6 @@ StudyHub is a responsive web application designed to help students and learners 
 - [LLM Usage](#llm-usage)
 - [What's Done vs. Missing](#whats-done-vs-missing)
 - [Setup and Local Run](#setup-and-local-run)
-- [Deployment and Hosting](#deployment-and-hosting)
 - [Live Demo](#live-demo)
 
 ## Features
@@ -161,7 +160,20 @@ LLMs (Grok, Claude, GPT) were used extensively to accelerate development (~60% o
 - URL: 
 - Test account:
   - email: 
-  - password: 
+  - password:
+
+**Home:**
+<img width="2558" height="1263" alt="Screenshot 2025-10-08 at 6 30 47 PM" src="https://github.com/user-attachments/assets/5ee46ee3-e890-4ada-9013-063759f74735" />
+
+**Quiz:**
+<img width="2558" height="1263" alt="Screenshot 2025-10-08 at 6 32 03 PM" src="https://github.com/user-attachments/assets/4a872752-9fe9-4a3d-9cd9-6b074b8c06d5" />
+
+**Chat:**
+<img width="2558" height="1263" alt="Screenshot 2025-10-08 at 6 32 39 PM" src="https://github.com/user-attachments/assets/cc35b6bd-5cc2-4d76-b30d-b9d653d25721" />
+
+**Profile:**
+<img width="2558" height="1263" alt="Screenshot 2025-10-08 at 6 33 23 PM" src="https://github.com/user-attachments/assets/ce4d7cbd-1f5f-49e1-b5fe-fd2567f0311e" />
+
 
 ---
 
