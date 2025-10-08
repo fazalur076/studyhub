@@ -79,7 +79,18 @@ const QuizQuestion = ({
               {question.pageReference && (
                 <div className="flex items-center gap-2 text-sm text-slate-600">
                   <BookOpen className="h-4 w-4" />
-                  <span>Reference: Page {question.pageReference}</span>
+                  <span className="font-medium">
+                    Reference:
+                    {question.pdfName ? (
+                      <>
+                        <span className="text-indigo-600"> {question.pdfName}</span>
+                        {' • '}
+                        <span>Page {question.pageReference}</span>
+                      </>
+                    ) : (
+                      <span>Page {question.pageReference}</span>
+                    )}
+                  </span>
                 </div>
               )}
             </div>

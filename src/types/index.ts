@@ -16,10 +16,11 @@ export interface QuizQuestion {
   options?: string[];
   correctAnswer: string;
   explanation: string;
-  topic: string;
-  difficulty: 'easy' | 'medium' | 'hard';
+  topic?: string;
+  difficulty?: 'easy' | 'medium' | 'hard';
   pageReference?: number;
-  sourceSnippet?: string;
+  pdfId?: string;
+  pdfName?: string;
 }
 
 export interface Quiz {

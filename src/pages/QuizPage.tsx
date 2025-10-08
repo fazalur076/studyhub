@@ -137,14 +137,16 @@ const QuizPage = () => {
     setLoading(true);
 
     try {
-      const pdfTexts: string[] = [];
+      const pdfTexts: Array<{ text: string; pdf: PDF }> = [];
+
       for (const pdfId of selectedPDFs) {
+        const pdf = await getPDFById(pdfId);
+        if (!pdf) continue;
+
         let pdfText = await getPDFText(pdfId);
 
         if (!pdfText) {
-          const pdf = await getPDFById(pdfId);
-          if (!pdf?.fileUrl) continue;
-
+          if (!pdf.fileUrl) continue;
           const response = await fetch(pdf.fileUrl);
           const blob = await response.blob();
           const file = new File([blob], pdf.name, { type: 'application/pdf' });
@@ -152,10 +154,10 @@ const QuizPage = () => {
           await savePDFText(pdfId, pdfText);
         }
 
-        pdfTexts.push(pdfText);
+        pdfTexts.push({ text: pdfText, pdf });
       }
 
-      if (pdfTexts.length === 0 || pdfTexts.every(t => !t.trim())) {
+      if (pdfTexts.length === 0 || pdfTexts.every(({ text }) => !text.trim())) {
         throw new Error('No text extracted from selected PDFs');
       }
 
@@ -165,8 +167,9 @@ const QuizPage = () => {
       const allQuestions: any[] = [];
 
       for (let i = 0; i < pdfTexts.length; i++) {
-        const pdfContent = pdfTexts[i];
+        const { text: pdfContent, pdf } = pdfTexts[i];
         const numQ = questionsPerPDF + (i < remainder ? 1 : 0);
+
         const questions = await generateQuiz({
           pdfContent,
           quizType: quizType as any,
@@ -174,7 +177,13 @@ const QuizPage = () => {
           difficulty: 'medium'
         });
 
-        allQuestions.push(...questions);
+        const questionsWithPDFInfo = questions.map(q => ({
+          ...q,
+          pdfId: pdf.id,
+          pdfName: pdf.name
+        }));
+
+        allQuestions.push(...questionsWithPDFInfo);
       }
 
       if (allQuestions.length === 0) {
