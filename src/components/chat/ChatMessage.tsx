@@ -1,5 +1,6 @@
 import { User, Bot, ExternalLink, Clock } from 'lucide-react';
 import { type ChatMessage } from '../../types';
+import VideoRecommendationButton from '../video/VideoRecommendationButton';
 
 interface ChatMessageProps {
   message: ChatMessage;
@@ -7,6 +8,100 @@ interface ChatMessageProps {
 
 const ChatMessageComponent = ({ message }: ChatMessageProps) => {
   const isUser = message.role === 'user';
+
+  const extractTopicFromMessage = (): string => {
+    if (!isUser) {
+      const assistantContent = message.content;
+      
+      const topicPatterns = [
+        /(?:about|regarding|on)\s+([A-Z][^.!?]*?)(?:[.!?]|$)/i,
+        /(?:explain|describe|discuss)\s+([A-Z][^.!?]*?)(?:[.!?]|$)/i,
+        /(?:what is|what are)\s+([A-Z][^.!?]*?)(?:\?|$)/i,
+        /(?:the concept of|the topic of)\s+([A-Z][^.!?]*?)(?:[.!?]|$)/i,
+        /(?:understanding|learning about)\s+([A-Z][^.!?]*?)(?:[.!?]|$)/i,        
+        /([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)(?:\s+is|\s+are|\s+refers|\s+means)/i,        
+        /([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3})(?:\s+is|\s+are|\s+refers|\s+means|\s+involves)/i,       
+        /(?:the process of|the mechanism of|the theory of)\s+([A-Z][^.!?]*?)(?:[.!?]|$)/i,
+        /([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)(?:\s+formula|\s+equation|\s+law)/i
+      ];
+      
+      for (const pattern of topicPatterns) {
+        const match = assistantContent.match(pattern);
+        if (match && match[1]) {
+          const topic = match[1].trim();
+          if (topic.length > 2 && !['The', 'This', 'That', 'These', 'Those'].includes(topic.split(' ')[0])) {
+            return topic;
+          }
+        }
+      }
+      
+      const words = assistantContent.split(/\s+/);
+      const capitalizedTerms = [];
+      
+      for (let i = 0; i < words.length; i++) {
+        const word = words[i];
+        if (/^[A-Z][a-z]+$/.test(word)) {
+          let term = word;
+          let j = i + 1;
+          while (j < words.length && /^[A-Z][a-z]+$/.test(words[j])) {
+            term += ' ' + words[j];
+            j++;
+          }
+          if (term.split(' ').length <= 4) {
+            capitalizedTerms.push(term);
+          }
+          i = j - 1;
+        }
+      }
+      
+      if (capitalizedTerms.length > 0) {
+        return capitalizedTerms.sort((a, b) => b.length - a.length)[0];
+      }
+      
+      const meaningfulWords = words.filter(word => 
+        word.length > 2 && 
+        !['the', 'and', 'or', 'but', 'for', 'with', 'this', 'that', 'these', 'those'].includes(word.toLowerCase())
+      );
+      
+      return meaningfulWords.slice(0, 3).join(' ');
+    }
+    return '';
+  };
+
+  const shouldShowVideoButton = (): boolean => {
+    if (!isUser) {
+      const assistantContent = message.content.toLowerCase();
+      
+      const explanationPatterns = [
+        /explain/i,
+        /describe/i,
+        /discuss/i,
+        /understand/i,
+        /learn/i,
+        /teach/i,
+        /show/i,
+        /demonstrate/i,
+        /illustrate/i,
+        /clarify/i,
+        /according to/i,
+        /as mentioned/i,
+        /as stated/i,
+        /this suggests/i,
+        /this implies/i,
+        /this indicates/i,
+        /in summary/i,
+        /additionally/i,
+        /however/i,
+        /thus/i,
+        /therefore/i
+      ];
+      
+      const hasCitations = Boolean(message.citations && message.citations.length > 0);
+      
+      return explanationPatterns.some(pattern => pattern.test(assistantContent)) || hasCitations;
+    }
+    return false;
+  };
 
   return (
     <div className={`flex items-start gap-3 md:gap-4 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
@@ -65,6 +160,16 @@ const ChatMessageComponent = ({ message }: ChatMessageProps) => {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {shouldShowVideoButton() && (
+            <div className="mt-4 md:mt-6 pt-3 md:pt-4 border-t border-slate-200/50">
+              <VideoRecommendationButton 
+                topic={extractTopicFromMessage()}
+                context={message.content}
+                maxVideos={3}
+              />
             </div>
           )}
         </div>

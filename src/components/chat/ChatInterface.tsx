@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Loader, BookOpen, MessageSquare, Sparkles, AlertCircle, Trash, Menu, X } from 'lucide-react';
+import { Send, Loader, BookOpen, Sparkles, AlertCircle, Trash, Menu, X } from 'lucide-react';
 import { type ChatSession, type ChatMessage } from '../../types';
 import { generateChatResponse } from '../../services/openai.service';
 import { getPDFText, getPDFById, deleteChatSession } from '../../services/storage.service';
@@ -147,20 +147,6 @@ const ChatInterface = ({ session, onUpdateSession, onDeleteSession, onOpenSideba
     setLoading(true);
 
     try {
-      const tempAssistantId = `temp-${Date.now()}`;
-      const placeholderAssistant: ChatMessage = {
-        id: tempAssistantId,
-        role: 'assistant',
-        content: 'Thinking…',
-        timestamp: new Date().toISOString()
-      };
-
-      onUpdateSession({
-        ...updatedSession,
-        messages: [...updatedSession.messages, placeholderAssistant],
-        updatedAt: new Date().toISOString()
-      });
-      scrollToBottom();
 
       const relevantChunks = findRelevantChunks(input, pdfChunks, 8);
 
@@ -238,10 +224,7 @@ const ChatInterface = ({ session, onUpdateSession, onDeleteSession, onOpenSideba
 
         const finalSession = {
           ...updatedSession,
-          messages: [
-            ...updatedSession.messages.filter(m => m.id !== tempAssistantId),
-            assistantMessage
-          ],
+          messages: [...updatedSession.messages, assistantMessage],
           updatedAt: new Date().toISOString()
         };
 
@@ -289,10 +272,7 @@ const ChatInterface = ({ session, onUpdateSession, onDeleteSession, onOpenSideba
 
       const errorSession = {
         ...updatedSession,
-        messages: [
-          ...updatedSession.messages.filter(m => !m.id.startsWith('temp-')),
-          errorMessage
-        ],
+        messages: [...updatedSession.messages, errorMessage],
         updatedAt: new Date().toISOString()
       };
 
@@ -309,12 +289,6 @@ const ChatInterface = ({ session, onUpdateSession, onDeleteSession, onOpenSideba
     }
   };
 
-  const suggestedQuestions = [
-    "Explain this concept in simple terms",
-    "What are the key points?",
-    "Give me an example",
-    "How does this work?"
-  ];
 
   if (loadingPdfs) {
     return (
@@ -422,26 +396,29 @@ const ChatInterface = ({ session, onUpdateSession, onDeleteSession, onOpenSideba
           <div className="flex-1 overflow-y-auto">
             <div className="max-w-4xl mx-auto p-3 md:p-6 space-y-4 md:space-y-6 pb-20 md:pb-6">
               {session.messages.length === 0 ? (
-                <div className="text-center py-8 md:py-12">
-                  <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4 md:mb-6">
-                    <Sparkles className="h-8 w-8 md:h-10 md:w-10 text-indigo-600" />
-                  </div>
-                  <h3 className="text-xl md:text-2xl font-bold text-slate-800 mb-2 md:mb-3">Start a Conversation</h3>
-                  <p className="text-sm md:text-base text-slate-600 mb-6 md:mb-8 max-w-md mx-auto px-4">
-                    Ask questions about your coursebook and get instant, accurate answers from your AI tutor
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3 max-w-2xl mx-auto px-4">
-                    {suggestedQuestions.map((q, idx) => (
-                      <button key={idx} onClick={() => setInput(q)}
-                        className="p-3 md:p-4 rounded-xl border-2 border-slate-200 hover:border-indigo-300 hover:shadow-md transition-all duration-300 text-left group">
-                        <div className="flex items-center gap-2 md:gap-3">
-                          <div className="w-7 h-7 md:w-8 md:h-8 bg-slate-100 group-hover:bg-indigo-100 rounded-lg flex items-center justify-center transition-all">
-                            <MessageSquare className="h-3 w-3 md:h-4 md:w-4 text-slate-600 group-hover:text-indigo-600" />
-                          </div>
-                          <span className="text-xs md:text-sm font-medium text-slate-700 group-hover:text-slate-900">{q}</span>
-                        </div>
-                      </button>
-                    ))}
+                <div className="flex items-center justify-center h-full min-h-[400px] md:min-h-[500px]">
+                  <div className="text-center max-w-md mx-auto px-4">
+                    <div className="w-20 h-20 md:w-24 md:h-24 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-3xl flex items-center justify-center mx-auto mb-6 md:mb-8">
+                      <Sparkles className="h-10 w-10 md:h-12 md:w-12 text-indigo-600" />
+                    </div>
+                    <h3 className="text-2xl md:text-3xl font-bold text-slate-800 mb-3 md:mb-4">Start Learning</h3>
+                    <p className="text-base md:text-lg text-slate-600 mb-6 md:mb-8 leading-relaxed">
+                      Ask questions about your coursebook and get instant, accurate answers from your AI tutor
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center">
+                      <div className="flex items-center gap-2 text-sm text-slate-500">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span>AI-powered explanations</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-slate-500">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        <span>Source citations</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-slate-500">
+                        <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                        <span>Video recommendations</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ) : (

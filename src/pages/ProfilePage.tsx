@@ -5,6 +5,7 @@ import { type UserProgress, type Quiz, type PDF } from '../types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Progress } from '../components/ui/progress';
 import { Button } from '../components/ui/button';
+import VideoRecommendationButton from '../components/video/VideoRecommendationButton';
 import { useNavigate } from 'react-router-dom';
 
 interface AttemptWithDetails extends QuizAttempt {
@@ -56,6 +57,27 @@ const ProfilePage = () => {
   const handleViewAttempt = (attempt: AttemptWithDetails) => {
     if (!attempt.quiz) return;
     navigate('/quiz', { state: { viewMode: 'review', quiz: attempt.quiz, attempt, userAnswers: attempt.userAnswers || {} } });
+  };
+
+  const getRecommendedTopic = (): string => {
+    if (!progress) return 'General Study Topics';
+    
+    const recentTopics = recentAttempts
+      .map(attempt => attempt.quiz?.questions?.map(q => q.topic).filter(Boolean))
+      .flat()
+      .filter((topic, index, arr) => arr.indexOf(topic) === index); // Remove duplicates
+    
+    if (recentTopics.length > 0) {
+      return recentTopics.slice(0, 2).join(' and ');
+    }
+    
+    if (progress.averageScore < 70) {
+      return 'Study Fundamentals';
+    } else if (progress.averageScore < 85) {
+      return 'Advanced Topics';
+    } else {
+      return 'Expert Level Concepts';
+    }
   };
 
   if (loading) {
@@ -347,6 +369,23 @@ const ProfilePage = () => {
                 </Card>
               );
             })}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Video Recommendations */}
+      {progress && (
+        <Card className="shadow-lg border-0">
+          <CardContent className="p-6">
+            <div className="text-center">
+              <h3 className="text-lg font-semibold text-slate-800 mb-2">Continue Learning</h3>
+              <p className="text-slate-600 text-sm mb-4">Get personalized video recommendations based on your progress</p>
+              <VideoRecommendationButton 
+                topic={getRecommendedTopic()}
+                context={`Based on your learning progress: ${progress.totalQuizzes} quizzes completed with ${progress.averageScore.toFixed(0)}% average score`}
+                maxVideos={3}
+              />
+            </div>
           </CardContent>
         </Card>
       )}

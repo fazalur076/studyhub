@@ -2,6 +2,7 @@ import { Trophy, RefreshCw, BarChart3, Target, CheckCircle2, XCircle, TrendingUp
 import { useNavigate } from 'react-router-dom';
 import { type Quiz, type QuizAttempt } from '../../types';
 import QuizQuestion from './QuizQuestion';
+import VideoRecommendationButton from '../video/VideoRecommendationButton';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -22,6 +23,19 @@ const QuizResults = ({ quiz, attempt, userAnswers, onNewQuiz }: QuizResultsProps
   ).length;
 
   const incorrectAnswers = quiz.questions.length - correctAnswers;
+
+  const getQuizTopic = (): string => {
+    const topics = quiz.questions
+      .map(q => q.topic)
+      .filter(Boolean)
+      .filter((topic, index, arr) => arr.indexOf(topic) === index);
+    
+    if (topics.length > 0) {
+      return topics.slice(0, 2).join(' and ');
+    }
+    
+    return `${quiz.type} Questions`;
+  };
 
   const getGrade = () => {
     if (percentage >= 90) return {
@@ -302,6 +316,20 @@ const QuizResults = ({ quiz, attempt, userAnswers, onNewQuiz }: QuizResultsProps
               showCorrectAnswer={true}
             />
           ))}
+        </CardContent>
+      </Card>
+
+      <Card className="shadow-lg border-0">
+        <CardContent className="p-6">
+          <div className="text-center">
+            <h3 className="text-lg font-semibold text-slate-800 mb-2">Want to learn more?</h3>
+            <p className="text-slate-600 text-sm mb-4">Get video recommendations for topics you missed</p>
+            <VideoRecommendationButton 
+              topic={getQuizTopic()}
+              context={`Quiz on ${quiz.type} questions with ${percentage.toFixed(0)}% score`}
+              maxVideos={4}
+            />
+          </div>
         </CardContent>
       </Card>
     </div>

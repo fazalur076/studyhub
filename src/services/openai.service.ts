@@ -322,7 +322,13 @@ export const getVideoRecommendations = async (
   const prompt = `Generate 5 specific, educational YouTube video search queries for learning about: ${topic}
   ${additionalContext ? `Context: ${additionalContext}` : ''}
   
-  Return queries that would find high-quality educational content (Khan Academy, CrashCourse, etc.)
+  Focus on:
+  - High-quality educational channels (Khan Academy, CrashCourse, 3Blue1Brown, Veritasium, etc.)
+  - Specific concepts and examples
+  - Different difficulty levels (beginner to advanced)
+  - Practical applications and problem-solving
+  
+  Return queries that would find the most relevant and educational content.
   Return as JSON array: {"queries": ["query1", "query2", ...]}`;
 
   try {
@@ -353,7 +359,13 @@ async function getVideoRecommendationsWithFallback(
   const prompt = `Generate 5 specific, educational YouTube video search queries for learning about: ${topic}
   ${additionalContext ? `Context: ${additionalContext}` : ''}
   
-  Return queries that would find high-quality educational content (Khan Academy, CrashCourse, etc.)
+  Focus on:
+  - High-quality educational channels (Khan Academy, CrashCourse, 3Blue1Brown, Veritasium, etc.)
+  - Specific concepts and examples
+  - Different difficulty levels (beginner to advanced)
+  - Practical applications and problem-solving
+  
+  Return queries that would find the most relevant and educational content.
   Return as JSON array: {"queries": ["query1", "query2", ...]}`;
 
   try {

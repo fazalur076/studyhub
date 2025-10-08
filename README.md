@@ -36,9 +36,13 @@ StudyHub is a responsive web application designed to help students and learners 
 2. **RAG Answers with Citations (Fully Implemented)**:
    - Ingests selected PDFs, chunks text, and embeds semantically (`pdf.service.ts`).
    - Chatbot provides answers with page numbers and 2–3 line snippets from the source (`ChatMessage.tsx`).
-3. **YouTube Videos Recommender (Partially Implemented)**:
-   - API function exists (`getVideoRecommendations` in `openai.service.ts`) but not integrated into the UI.
-   - Tradeoff: Prioritized core features (quizzes, RAG chat) due to time constraints.
+   - Smart topic detection for contextual video recommendations based on the content being discussed.
+3. **YouTube Videos Recommender (Fully Implemented)**:
+   - Integrated video recommendation button in chat responses (`VideoRecommendationButton.tsx`).
+   - Shows relevant educational videos from channels like Khan Academy, CrashCourse, 3Blue1Brown.
+   - Appears automatically for assistant responses with explanations or citations.
+   - **Dynamic topic detection** - works for any subject matter (chemistry, physics, biology, mathematics, etc.).
+   - Generates contextual video suggestions based on intelligently extracted topics from the conversation.
 
 ## Tech Stack
 - **Frontend**: React 19, Vite, TypeScript, Tailwind CSS, Lucide Icons, React Router, React PDF.
@@ -96,11 +100,10 @@ LLMs (Grok, Claude, GPT) were used extensively to accelerate development (~60% o
 ## What's Done vs. Missing
 - **Done**:
   - All must-have features: Source selector, PDF viewer, quiz engine, progress tracking.
-  - Nice-to-haves: Chat UI, RAG with citations.
+  - All nice-to-haves: Chat UI, RAG with citations, YouTube video recommendations.
   - Responsive design, clean UI/UX, robust error handling (toasts, loading states).
   - **Validated by 10+ active users** who rely on StudyHub for competitive exam prep, university studies, and professional certifications.
 - **Missing/Partial**:
-  - **YouTube Recommender**: API function exists but lacks UI integration (e.g., button in `QuizResults.tsx` to show video links based on weaknesses).
   - **Automated Content Seeding**: Currently supports manual PDF uploads to ensure each user builds their personalized study library. This design choice was intentional—allowing learners to curate content relevant to their specific goals (JEE, NEET, university exams, professional certifications) rather than limiting them to pre-loaded textbooks. Future versions may include optional template libraries for popular exams while preserving this flexibility.
 
 ## Setup and Local Run
