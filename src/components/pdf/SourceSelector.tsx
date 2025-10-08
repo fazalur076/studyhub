@@ -8,9 +8,10 @@ interface SourceSelectorProps {
   selectedPDFs: string[];
   onSelectionChange: (selectedIds: string[]) => void;
   onDeletePDF?: (pdfId: string) => void;
+  onPreviewPDF?: (pdfId: string) => void;
 }
 
-const SourceSelector = ({ pdfs, selectedPDFs, onSelectionChange, onDeletePDF }: SourceSelectorProps) => {
+const SourceSelector = ({ pdfs, selectedPDFs, onSelectionChange, onDeletePDF, onPreviewPDF }: SourceSelectorProps) => {
   const handleSelectAll = () => {
     if (selectedPDFs.length === pdfs.length) {
       onSelectionChange([]);
@@ -103,22 +104,30 @@ const SourceSelector = ({ pdfs, selectedPDFs, onSelectionChange, onDeletePDF }: 
                       </p>
                     </div>
 
-                    {isSelected && (
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        {onDeletePDF && (
-                          <div
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onDeletePDF(pdf.id);
-                            }}
-                            className="w-7 h-7 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center cursor-pointer"
-                            title="Delete PDF"
-                          >
-                            <Trash className="w-4 h-4 text-white" />
-                          </div>
-                        )}
-                      </div>
-                    )}
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onPreviewPDF?.(pdf.id);
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-xs border ${isSelected ? 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100' : 'bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700'}`}
+                    title="Preview"
+                  >
+                    Preview
+                  </button>
+                  {isSelected && onDeletePDF && (
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeletePDF(pdf.id);
+                      }}
+                      className="w-7 h-7 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center cursor-pointer"
+                      title="Delete PDF"
+                    >
+                      <Trash className="w-4 h-4 text-white" />
+                    </div>
+                  )}
+                </div>
                   </div>
                 </div>
               );

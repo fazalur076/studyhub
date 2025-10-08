@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, FileText, MessageSquare, Sparkles, TrendingUp, BookOpen, ChevronRight, Trash } from 'lucide-react';
+import { Upload, FileText, MessageSquare, Sparkles, TrendingUp, BookOpen, ChevronRight, Trash, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { savePDF, savePDFText, getAllPDFs, deletePDF, uploadPDFFile } from '../services/storage.service';
@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import ConfirmModal from '../components/ui/confirmModal';
 import { v4 as uuidv4 } from 'uuid';
 import PDFUpload from '../components/pdf/PDFUpload';
+import PDFViewer from '../components/pdf/PDFViewer';
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ const HomePage = () => {
   
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pdfToDelete, setPdfToDelete] = useState<string | null>(null);
+  const [previewPdfId, setPreviewPdfId] = useState<string | null>(null);
 
   useEffect(() => {
     void loadPDFs();
@@ -285,9 +287,16 @@ const HomePage = () => {
                         </p>
                       </div>
 
-                      {isSelected && (
-                        <div className="flex items-center gap-2 flex-shrink-0">
-
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="border-2"
+                          onClick={(e) => { e.stopPropagation(); setPreviewPdfId(pdf.id); }}
+                        >
+                          Preview
+                        </Button>
+                        {isSelected && (
                           <div
                             onClick={(e) => {
                               e.stopPropagation();
@@ -298,8 +307,8 @@ const HomePage = () => {
                           >
                             <Trash className="w-4 h-4 text-white" />
                           </div>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
@@ -343,6 +352,21 @@ const HomePage = () => {
           onUpload={handleUploadFile}
           onClose={() => setShowUpload(false)}
         />
+      )}
+      {previewPdfId && (
+        <div className="fixed inset-0 z-[70] bg-black/60 flex items-center justify-center p-4" onClick={() => setPreviewPdfId(null)}>
+          <div className="bg-white rounded-xl w-full max-w-5xl h-[80vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-3 border-b border-slate-200 bg-gradient-to-r from-indigo-50 to-purple-50">
+              <h3 className="font-semibold text-slate-800">Preview</h3>
+              <button onClick={() => setPreviewPdfId(null)} className="w-9 h-9 bg-slate-100 hover:bg-slate-200 rounded-xl flex items-center justify-center">
+                <X className="h-5 w-5 text-slate-700" />
+              </button>
+            </div>
+            <div className="h-full">
+              <PDFViewer pdfUrl={previewPdfId} />
+            </div>
+          </div>
+        </div>
       )}
     </div>
 
