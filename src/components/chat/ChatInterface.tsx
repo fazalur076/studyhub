@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Loader, BookOpen, MessageSquare, Sparkles, AlertCircle, Trash } from 'lucide-react';
+import { Send, Loader, BookOpen, MessageSquare, Sparkles, AlertCircle, Trash, Menu, X } from 'lucide-react';
 import { type ChatSession, type ChatMessage } from '../../types';
 import { generateChatResponse } from '../../services/openai.service';
 import { getPDFText, getPDFById, deleteChatSession } from '../../services/storage.service';
@@ -15,9 +15,10 @@ interface ChatInterfaceProps {
   session: ChatSession;
   onUpdateSession: (session: ChatSession) => void;
   onDeleteSession: () => void;
+  onOpenSidebar?: () => void;
 }
 
-const ChatInterface = ({ session, onUpdateSession, onDeleteSession }: ChatInterfaceProps) => {
+const ChatInterface = ({ session, onUpdateSession, onDeleteSession, onOpenSidebar }: ChatInterfaceProps) => {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [pdfChunks, setPdfChunks] = useState<PDFChunk[]>([]);
@@ -272,7 +273,18 @@ const ChatInterface = ({ session, onUpdateSession, onDeleteSession }: ChatInterf
           {/* Mobile Header */}
           <div className="flex flex-col space-y-2 md:hidden">
             <div className="flex items-center justify-between gap-2">
-              <h2 className="text-base font-bold text-slate-800 truncate flex-1 min-w-0">{session.title}</h2>
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                {onOpenSidebar && (
+                  <button
+                    onClick={onOpenSidebar}
+                    className="w-9 h-9 bg-slate-100 hover:bg-slate-200 rounded-xl flex items-center justify-center transition-all flex-shrink-0"
+                    title="Open chat history"
+                  >
+                    <Menu className="h-5 w-5 text-slate-700" />
+                  </button>
+                )}
+                <h2 className="text-base font-bold text-slate-800 truncate">{session.title}</h2>
+              </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 <button
                   onClick={() => setShowPDFPanel(true)}
@@ -303,7 +315,7 @@ const ChatInterface = ({ session, onUpdateSession, onDeleteSession }: ChatInterf
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
         <div className={`flex-1 flex flex-col ${showPDFPanel ? 'md:max-w-2xl' : 'w-full'}`}>
           <div className="flex-1 overflow-y-auto">
-            <div className="max-w-4xl mx-auto p-3 md:p-6 space-y-4 md:space-y-6">
+            <div className="max-w-4xl mx-auto p-3 md:p-6 space-y-4 md:space-y-6 pb-20 md:pb-6">
               {session.messages.length === 0 ? (
                 <div className="text-center py-8 md:py-12">
                   <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4 md:mb-6">
@@ -351,8 +363,8 @@ const ChatInterface = ({ session, onUpdateSession, onDeleteSession }: ChatInterf
             </div>
           </div>
 
-          {/* Input Area */}
-          <div className={`border-t-2 border-slate-200 bg-white shadow-lg ${session.messages.length > 0 ? 'pb-18 md:pb-0' : ''}`}>
+          {/* Input Area - FIXED: Added pb-20 md:pb-0 to avoid mobile bottom bar */}
+          <div className="border-t-2 border-slate-200 bg-white shadow-lg pb-20 md:pb-0">
             <div className="max-w-4xl mx-auto p-3 md:p-6">
               <div className="bg-slate-50 rounded-2xl border-2 border-slate-200 focus-within:border-indigo-500 focus-within:ring-4 focus-within:ring-indigo-100 transition-all duration-300">
                 <textarea
@@ -405,8 +417,8 @@ const ChatInterface = ({ session, onUpdateSession, onDeleteSession }: ChatInterf
                           size="sm"
                           variant={activePDFId === pdfId ? 'default' : 'outline'}
                           className={`flex-shrink-0 text-xs ${activePDFId === pdfId
-                            ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white'
-                            : 'border-2 hover:border-indigo-300'
+                              ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white'
+                              : 'border-2 hover:border-indigo-300'
                             }`}
                         >
                           <BookOpen className="h-3 w-3 mr-1" />
@@ -420,7 +432,7 @@ const ChatInterface = ({ session, onUpdateSession, onDeleteSession }: ChatInterf
                     className="w-9 h-9 bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 rounded-xl flex items-center justify-center transition-all flex-shrink-0"
                     title="Close PDF"
                   >
-                    <span className="text-white text-xl font-bold">×</span>
+                    <X className="h-5 w-5 text-white" />
                   </button>
                 </div>
                 <div className="flex-1 overflow-hidden">
@@ -441,8 +453,8 @@ const ChatInterface = ({ session, onUpdateSession, onDeleteSession }: ChatInterf
                       size="sm"
                       variant={activePDFId === pdfId ? 'default' : 'outline'}
                       className={`flex-shrink-0 ${activePDFId === pdfId
-                        ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700'
-                        : 'border-2 hover:border-indigo-300'
+                          ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700'
+                          : 'border-2 hover:border-indigo-300'
                         }`}
                     >
                       <BookOpen className="h-4 w-4 mr-2" />

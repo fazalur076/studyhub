@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MessageSquare, Sparkles, BookOpen, Zap, Target } from 'lucide-react';
+import { MessageSquare, Sparkles, BookOpen, Zap, Target, X } from 'lucide-react';
 import { getAllChatSessions, saveChatSession, getAllPDFs, deleteChatSession } from '../services/storage.service';
 import { type ChatSession, type PDF } from '../types';
 import ChatSidebar from '../components/chat/ChatSidebar';
@@ -18,6 +18,7 @@ const ChatPage = () => {
   const [selectedPDFs, setSelectedPDFs] = useState<string[]>([]);
   const [showSourceSelector, setShowSourceSelector] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -46,6 +47,7 @@ const ChatPage = () => {
   const handleNewChat = () => {
     setShowSourceSelector(true);
     setCurrentSession(null);
+    setMobileSidebarOpen(false);
   };
 
   const handleStartChat = async () => {
@@ -74,6 +76,7 @@ const ChatPage = () => {
     setCurrentSession(session);
     setSelectedPDFs(session.pdfContext);
     setShowSourceSelector(false);
+    setMobileSidebarOpen(false);
     localStorage.setItem('selectedPDFs', JSON.stringify(session.pdfContext));
   };
 
@@ -103,7 +106,6 @@ const ChatPage = () => {
     }
   };
 
-
   const suggestedPrompts = [
     { icon: Sparkles, text: "Explain this concept in simple terms", gradient: "from-purple-500 to-pink-500" },
     { icon: BookOpen, text: "Summarize the key points", gradient: "from-blue-500 to-cyan-500" },
@@ -112,7 +114,8 @@ const ChatPage = () => {
   ];
 
   return (
-    <div className="flex flex-col md:flex-row h-[calc(100vh-8rem)] bg-slate-50">
+    <div className="flex flex-col md:flex-row h-[calc(100vh-8rem)] bg-slate-50 relative">
+      {/* Desktop Sidebar */}
       <div className={`${showSourceSelector || currentSession ? 'hidden md:flex' : 'flex'} md:flex`}>
         <ChatSidebar
           sessions={sessions}
@@ -124,10 +127,43 @@ const ChatPage = () => {
         />
       </div>
 
+      {/* Mobile Sidebar Overlay */}
+      {mobileSidebarOpen && (
+        <div
+          className="md:hidden fixed inset-0 z-[70] bg-black/50 backdrop-blur-sm"
+          onClick={() => setMobileSidebarOpen(false)}
+        >
+          <div
+            className="absolute inset-y-0 left-0 w-80 max-w-[85vw] bg-white shadow-2xl overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="sticky top-0 z-10 flex items-center justify-between p-4 border-b border-slate-200 bg-white">
+              <h3 className="font-semibold text-slate-800 text-lg">Chat History</h3>
+              <button
+                onClick={() => setMobileSidebarOpen(false)}
+                className="w-9 h-9 bg-slate-100 hover:bg-slate-200 rounded-xl flex items-center justify-center transition-all"
+              >
+                <X className="h-5 w-5 text-slate-700" />
+              </button>
+            </div>
+            <div className="p-4">
+              <ChatSidebar
+                sessions={sessions}
+                currentSession={currentSession}
+                onSelectSession={handleSelectSession}
+                onNewChat={handleNewChat}
+                isOpen={true}
+                onToggle={() => { }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col bg-white">
         {showSourceSelector ? (
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto pb-20 md:pb-0">
             <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 p-8 md:p-12">
               <div className="absolute inset-0 bg-black/10"></div>
               <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
@@ -291,11 +327,12 @@ const ChatPage = () => {
             session={currentSession}
             onUpdateSession={handleUpdateSession}
             onDeleteSession={() => handleDeleteSession(currentSession.id)}
+            onOpenSidebar={() => setMobileSidebarOpen(true)}
           />
 
         ) : (
-          <div className="flex-1 flex items-center justify-center p-4 md:p-8">
-            <div className="text-center max-w-2xl">
+          <div className="flex-1 flex items-center justify-center p-4 md:p-8 pb-20 md:pb-8">
+            <div className="text-center max-w-2xl pb-6 md:pb-0">
               <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 md:mb-6 shadow-lg">
                 <MessageSquare className="h-8 w-8 md:h-10 md:w-10 text-white" />
               </div>
