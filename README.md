@@ -160,10 +160,10 @@ LLMs (Grok, Claude, GPT) were used extensively to accelerate development (~60% o
 
 ## Live Demo
 
-- URL: 
+- URL: https://stdhub.surge.sh/
 - Test account:
-  - email: 
-  - password:
+  - email: student@studyhub.com
+  - password: testcreds1234
 
 **Home:**
 <img width="2558" height="1263" alt="Screenshot 2025-10-08 at 6 30 47 PM" src="https://github.com/user-attachments/assets/5ee46ee3-e890-4ada-9013-063759f74735" />
