@@ -61,9 +61,24 @@ const QuizQuestion = ({
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-4 mb-2">
-                <p className="text-lg font-semibold text-slate-800 leading-relaxed">
-                  {question.question}
-                </p>
+                <div className="flex items-start gap-3 flex-1">
+                  <p className="text-lg font-semibold text-slate-800 leading-relaxed">
+                    {question.question}
+                  </p>
+                  <Badge
+                    variant="outline"
+                    className={`text-xs font-medium px-2 py-1 flex-shrink-0 ${
+                      question.type === 'MCQ'
+                        ? 'border-blue-200 text-blue-700 bg-blue-50'
+                        : question.type === 'SAQ'
+                        ? 'border-orange-200 text-orange-700 bg-orange-50'
+                        : 'border-purple-200 text-purple-700 bg-purple-50'
+                    }`}
+                  >
+                    {question.type === 'MCQ' ? 'Multiple Choice' : 
+                     question.type === 'SAQ' ? 'Short Answer' : 'Long Answer'}
+                  </Badge>
+                </div>
                 {showCorrectAnswer && (
                   <Badge
                     variant="secondary"
@@ -158,7 +173,11 @@ const QuizQuestion = ({
                 value={userAnswer || ''}
                 onChange={(e) => !showCorrectAnswer && onAnswerSelect(e.target.value)}
                 disabled={showCorrectAnswer}
-                placeholder="Type your answer here..."
+                placeholder={
+                  question.type === 'SAQ' 
+                    ? "Type your short answer here (20-30 words)..." 
+                    : "Type your detailed answer here (50-100 words)..."
+                }
                 className={`w-full p-5 border-2 rounded-xl transition-all duration-300 resize-none ${showCorrectAnswer
                     ? 'border-slate-300 bg-slate-50 cursor-default'
                     : isAnswered
@@ -170,7 +189,11 @@ const QuizQuestion = ({
               {!showCorrectAnswer && !isAnswered && (
                 <p className="text-sm text-slate-500 flex items-center gap-2">
                   <Lightbulb className="h-4 w-4" />
-                  <span>Write a clear and concise answer</span>
+                  <span>
+                    {question.type === 'SAQ' 
+                      ? "Write a brief, focused answer (20-30 words)" 
+                      : "Write a comprehensive, detailed answer (50-100 words)"}
+                  </span>
                 </p>
               )}
             </div>
