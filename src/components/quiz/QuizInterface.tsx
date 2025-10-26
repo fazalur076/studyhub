@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Clock, Send, AlertCircle, Sparkles, CheckCircle2 } from 'lucide-react';
 import { type Quiz } from '../../types';
 import QuizQuestion from './QuizQuestion';
@@ -26,6 +27,10 @@ const QuizInterface = ({
   const progress = (answeredCount / quiz.questions.length) * 100;
   const allAnswered = answeredCount === quiz.questions.length;
   const showProgressUI = false;
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
 
   const handleSubmitClick = () => {
     if (!allAnswered) {

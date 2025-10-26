@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Trophy, RefreshCw, BarChart3, Target, CheckCircle2, XCircle, TrendingUp, Award, Sparkles, Home } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { type Quiz, type QuizAttempt } from '../../types';
@@ -17,6 +18,10 @@ interface QuizResultsProps {
 const QuizResults = ({ quiz, attempt, userAnswers, onNewQuiz }: QuizResultsProps) => {
   const navigate = useNavigate();
   const percentage = (attempt.score / attempt.maxScore) * 100;
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
 
   const correctAnswers = quiz.questions.filter(q =>
     userAnswers[q.id]?.toLowerCase().trim() === q.correctAnswer.toLowerCase().trim()

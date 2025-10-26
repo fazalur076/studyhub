@@ -185,6 +185,8 @@ const QuizPage = () => {
       await saveQuiz(newQuiz);
       setCurrentQuiz(newQuiz);
       setAnswers({});
+      
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (error: any) {
       console.error('Quiz generation error:', error);
       toast.error(`Failed to generate quiz: ${error.message}`);
