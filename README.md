@@ -1,186 +1,289 @@
 # StudyHub: AI-Powered Study Companion
 
-StudyHub is a responsive web application designed to help students and learners revise their study materials using AI. It enables users to upload and manage PDFs (e.g., textbooks, study guides, reference materials), view PDFs, generate quizzes (MCQs, SAQs, LAQs), chat with an AI tutor with Retrieval-Augmented Generation (RAG) citations, and track learning progress. This project was developed as an assignment for BeyondChats, showcasing a balance of functionality, UI/UX, and rapid development using Large Language Models (LLMs).
+An open-source, AI-powered learning platform to help students study smarter. Upload PDFs, generate quizzes, chat with an AI tutor, and track your progress—all for free.
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
+
+> Real Impact: Currently used by 15+ students for competitive exams, university coursework, and professional certifications.
 
 ## Table of Contents
+- [About](#about)
 - [Features](#features)
+- [Demo](#demo)
 - [Tech Stack](#tech-stack)
-- [Development Journey](#development-journey)
-- [LLM Usage](#llm-usage)
-- [What's Done vs. Missing](#whats-done-vs-missing)
-- [Setup and Local Run](#setup-and-local-run)
-- [Live Demo](#live-demo)
+- [Getting Started](#getting-started)
+- [Development Notes](#development-notes)
+- [Contributing](#contributing)
+- [License](#license)
+
+## About
+
+I built StudyHub over a weekend as a take-home assignment for a company interview. I didn't get the job, but something unexpected happened—over 10 friends and classmates started using it for their exams. From JEE and NEET prep to university finals and professional certifications, people found it genuinely useful. Their feedback convinced me this could help a lot more students.
+
+So I'm making it open-source. No paywalls, no data collection, no strings attached. Just a tool that makes studying with AI accessible to everyone who needs it.
+
+### What StudyHub Does
+
+- Upload and study from any PDF textbook, notes, or reference material
+- Generate practice quizzes with multiple choice, short answer, and long-form questions
+- Chat with an AI tutor that cites specific pages from your materials
+- Track your performance over time to identify weak areas
+- Get contextual YouTube video recommendations for topics you're learning
+- Keep your data private—self-host it or use any AI provider you trust
 
 ## Features
 
-### Must-Have Features (Fully Implemented)
-1. **Source Selector**:
-   - Component to select all uploaded PDFs or specific ones (`SourceSelector.tsx`).
-   - Supports manual seeding with NCERT Class XI Physics PDFs (marked with `isSeeded` flag).
-   - Allows users to upload their own PDF coursebooks via drag-and-drop or browse (`PDFUpload.tsx`).
-2. **PDF Viewer**:
-   - Displays selected PDFs in a split view (desktop) or overlay (mobile) alongside chat (`PDFViewer.tsx`).
-   - Features zoom, page navigation, fullscreen, and page number input.
-3. **Quiz Generator Engine**:
-   - Generates Multiple Choice Questions (MCQs), Short Answer Questions (SAQs), Long Answer Questions (LAQs), and mixed quizzes from selected PDFs using LLMs (`QuizPage.tsx`, `openai.service.ts`).
-   - Renders quizzes with answer capture, scoring, and detailed explanations (`QuizInterface.tsx`, `QuizQuestion.tsx`, `QuizResults.tsx`).
-   - Stores quiz attempts in Supabase (`quiz_attempts` table) and allows generating new question sets.
-4. **Progress Tracking**:
-   - Tracks user performance, including total quizzes, average scores, strengths/weaknesses, and topic-specific scores (`ProfilePage.tsx`, `calculateUserProgress`).
-   - Displays a dashboard with charts, recent attempts, and reviewable quizzes.
+### Core Functionality
 
-### Nice-to-Have Features
-1. **Chat UI (Fully Implemented)**:
-   - ChatGPT-inspired interface with a sidebar for chat history, main chat window, and bottom input box (`ChatPage.tsx`, `ChatSidebar.tsx`, `ChatInterface.tsx`).
-   - Supports creating new chats, switching between chats, and mobile-responsive design (e.g., bottom nav, overlays).
-2. **RAG Answers with Citations (Fully Implemented)**:
-   - Ingests selected PDFs, chunks text, and embeds semantically (`pdf.service.ts`).
-   - Chatbot provides answers with page numbers and 2–3 line snippets from the source (`ChatMessage.tsx`).
-   - Smart topic detection for contextual video recommendations based on the content being discussed.
-3. **YouTube Videos Recommender (Fully Implemented)**:
-   - Integrated video recommendation button in chat responses (`VideoRecommendationButton.tsx`).
-   - Shows relevant educational videos from channels like Khan Academy, CrashCourse, 3Blue1Brown.
-   - Appears automatically for assistant responses with explanations or citations.
-   - **Dynamic topic detection** - works for any subject matter (chemistry, physics, biology, mathematics, etc.).
-   - Generates contextual video suggestions based on intelligently extracted topics from the conversation.
+**Smart Source Management**
+
+Upload and organize multiple PDFs with drag-and-drop. Select specific materials when you want focused study sessions. Works with any educational content—textbooks, lecture notes, reference guides, whatever you're studying from.
+
+**AI Quiz Generation**
+
+Generate quizzes in multiple formats: multiple choice questions, short answer questions, and long answer questions. You can mix formats too. Get instant scoring with detailed explanations for each answer. All your quiz attempts are saved so you can review them later.
+
+**RAG-Powered AI Chat**
+
+Ask questions about your study materials and get answers with page-specific citations and relevant snippets. The PDF viewer sits right next to the chat so you can verify sources immediately. Works across all subjects—the topic detection is smart enough to understand what you're asking about.
+
+**Progress Tracking**
+
+Performance analytics with visual charts showing your improvement over time. See which topics you're strong in and which need more work. Review your quiz history and identify patterns in your learning.
+
+**Smart Recommendations**
+
+Get YouTube video suggestions based on what you're studying. The system detects topics dynamically, so it works for any subject. Pulls from quality educational channels like Khan Academy, CrashCourse, and 3Blue1Brown.
+
+### Design
+
+The interface is fully responsive—works on phones, tablets, and desktops. I went for a clean, ChatGPT-inspired look that stays out of your way. Fast performance, smooth interactions, nothing fancy that slows things down.
+
+## Demo
+
+**Live Demo**: [https://stdhub.surge.sh/](https://stdhub.surge.sh/)
+
+**Test Credentials**:
+- Email: `student@studyhub.com`
+- Password: `testcreds1234`
+
+### Screenshots
+
+**Home - Upload & Manage Study Materials**
+
+<img width="2558" alt="StudyHub Home" src="https://github.com/user-attachments/assets/5ee46ee3-e890-4ada-9013-063759f74735" />
+
+**Quiz - Practice with AI-Generated Questions**
+
+<img width="2558" alt="StudyHub Quiz" src="https://github.com/user-attachments/assets/4a872752-9fe9-4a3d-9cd9-6b074b8c06d5" />
+
+**Chat - AI Tutor with Citations**
+
+<img width="2558" alt="StudyHub Chat" src="https://github.com/user-attachments/assets/cc35b6bd-5cc2-4d76-b30d-b9d653d25721" />
+
+**Profile - Track Your Progress**
+
+<img width="2558" alt="StudyHub Profile" src="https://github.com/user-attachments/assets/ce4d7cbd-1f5f-49e1-b5fe-fd2567f0311e" />
 
 ## Tech Stack
-- **Frontend**: React 19, Vite, TypeScript, Tailwind CSS, Lucide Icons, React Router, React PDF.
-- **Backend/Database**: Supabase (Auth, PostgreSQL, Storage) with Row-Level Security (RLS).
-- **AI**: Grok/OpenAI for quiz generation and RAG-based chat responses.
-- **Other**: UUID for unique IDs, Sonner for toast notifications.
 
-## Development Journey
+**Frontend**
+- React 19, TypeScript, Vite
+- Tailwind CSS for styling
+- React Router for navigation
+- React PDF for document viewing
+- Lucide Icons
 
-### Real-World Validation
-What started as a BeyondChats assignment quickly evolved into a tool that resonated with real users. Over **10+ friends and peers** are now actively using StudyHub for their exam preparations—ranging from competitive exams to university coursework—and have provided overwhelmingly positive feedback. This organic adoption validated the product-market fit and motivated continuous refinements based on user suggestions.
+**Backend & Database**
+- Supabase (Authentication, PostgreSQL, Storage)
+- Row-Level Security for data protection
 
-## Future Roadmap & Vision
+**AI & Processing**
+- OpenAI-compatible APIs (works with OpenAI, Grok, or self-hosted models)
+- Custom RAG implementation for citations
+- PDF text extraction and chunking
 
-### Planned Enhancements
-1. **Custom LLM Training**:
-   - Build and fine-tune a Llama-based model specifically optimized for educational Q&A, quiz generation, and study assistance.
-   - Train on curated educational datasets to improve accuracy, consistency, and subject-specific understanding.
-   - Reduce dependency on external APIs for better control, cost efficiency, and offline capabilities.
+**Other Tools**
+- Sonner for toast notifications
+- UUID for unique identifiers
 
-2. **Full-Stack Ownership**:
-   - Transition from external AI APIs to self-hosted inference infrastructure.
-   - Implement custom RAG pipelines with domain-specific embeddings for improved citation accuracy.
-   - Build proprietary quiz generation algorithms tailored to different learning styles and difficulty curves.
+## Getting Started
 
-3. **Enhanced User Experience**:
-   - Adaptive learning paths that adjust based on quiz performance and progress patterns.
-   - Collaborative study features (shared quizzes, study groups, peer challenges).
-   - Expanded content support (lecture videos, handwritten notes OCR, audio transcriptions).
-
-4. **Production Readiness**:
-   - Public hosting with scalable infrastructure.
-   - Mobile app versions (React Native or Flutter).
-   - Advanced analytics dashboard for educators and institutions.
-
-### Open-Source Commitment
-**StudyHub will remain 100% open-source.** The vision is to democratize AI-powered learning by building a fully transparent, community-driven platform where:
-- Students and educators can self-host their own instances with complete data privacy.
-- Developers can contribute features, language support, and educational content integrations.
-- The custom-trained Llama model and training pipeline will be publicly available for research and adaptation.
-- No vendor lock-in, no hidden algorithms—just open education technology accessible to everyone.
-
-### Long-Term Goal
-Transform StudyHub from an MVP into a **fully independent, production-grade learning platform** with 100% custom-built AI capabilities—no external dependencies, complete control over the learning experience, and a model specifically trained to understand how students learn best. All while keeping it open, transparent, and free for the global learning community.
-
----
-## LLM Usage
-LLMs (Grok, Claude, GPT) were used extensively to accelerate development (~60% of code):
-- **Code Generation**: Generated component skeletons (e.g., `ChatInterface.tsx`, `QuizQuestion.tsx`), service functions (e.g., `generateQuiz`, `chunkText`).
-- **Prompt Engineering**: Crafted prompts for quiz generation (MCQ/SAQ/LAQ) and RAG chat with citations.
-- **Debugging**: Fixed Supabase RLS issues, React hooks, and PDF extraction errors.
-- **Optimization**: Refined state management, hook usage, and Tailwind styles.
-- All LLM-generated code was manually reviewed and customized for type safety, performance, and consistency.
-
-## What's Done vs. Missing
-- **Done**:
-  - All must-have features: Source selector, PDF viewer, quiz engine, progress tracking.
-  - All nice-to-haves: Chat UI, RAG with citations, YouTube video recommendations.
-  - Responsive design, clean UI/UX, robust error handling (toasts, loading states).
-  - **Validated by 10+ active users** who rely on StudyHub for competitive exam prep, university studies, and professional certifications.
-- **Missing/Partial**:
-  - **Automated Content Seeding**: Currently supports manual PDF uploads to ensure each user builds their personalized study library. This design choice was intentional—allowing learners to curate content relevant to their specific goals (JEE, NEET, university exams, professional certifications) rather than limiting them to pre-loaded textbooks. Future versions may include optional template libraries for popular exams while preserving this flexibility.
-
-## Setup and Local Run
 ### Prerequisites
-- Node.js 18+ (https://nodejs.org).
-- Supabase account (https://supabase.com).
-- OpenAI or Grok API key for quiz generation and chat (https://platform.openai.com or https://x.ai/api).
-- (Optional) Study material PDFs for testing (textbooks, NCERT books, or any educational content).
 
-### Steps
-1. **Clone Repository**:
+- Node.js 18+ ([Download](https://nodejs.org))
+- Supabase account ([Sign up free](https://supabase.com))
+- AI API key (OpenAI, Grok/xAI, or any OpenAI-compatible endpoint)
+
+### Installation
+
+1. **Clone the repository**
    ```bash
-   git clone https://github.com/your-username/studyhub.git
+   git clone https://github.com/yourusername/studyhub.git
    cd studyhub
    ```
-2. **Install Dependencies**:
+
+2. **Install dependencies**
    ```bash
    npm install
    ```
 
-3. **Create Environment Variables**:
-   Create a `.env` file in the project root with:
+3. **Set up environment variables**
+   
+   Create a `.env` file in the project root:
    ```bash
-   VITE_SUPABASE_URL=your_supabase_url
+   # Supabase Configuration
+   VITE_SUPABASE_URL=your_supabase_project_url
    VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 
-   # LLM provider (OpenAI, Grok/xAI, or any OpenAI-compatible API)
-   VITE_AI_API_KEY=your_ai_api_key
+   # AI Provider Configuration (choose one)
+   
+   # Option 1: OpenAI
+   VITE_AI_API_KEY=your_openai_api_key
    VITE_AI_API_BASE_URL=https://api.openai.com/v1
-   VITE_AI_MODEL=llama-3.3-70b-versatile
+   VITE_AI_MODEL=gpt-4-turbo-preview
+   
+   # Option 2: Grok (xAI)
+   # VITE_AI_API_KEY=your_grok_api_key
+   # VITE_AI_API_BASE_URL=https://api.x.ai/v1
+   # VITE_AI_MODEL=llama-3.3-70b-versatile
+   
+   # Option 3: Any OpenAI-compatible endpoint
+   # VITE_AI_API_KEY=your_api_key
+   # VITE_AI_API_BASE_URL=http://localhost:8000/v1
+   # VITE_AI_MODEL=your-model-name
    ```
 
-4. **Set Up Supabase**:
-   - Create a new Supabase project and copy URL + anon key into `.env`.
-   - Run SQL schema from `sql.txt` in Supabase SQL editor (creates tables and indexes).
-   - Apply Row-Level Security policies from `rls.txt`.
-   - Create a Storage bucket named `study-app-pdfs` and apply policies from `storage.txt`.
+4. **Configure Supabase**
+   
+   a. Create a new Supabase project at [supabase.com](https://supabase.com)
+   
+   b. Copy your project URL and anon key to `.env`
+   
+   c. Set up the database:
+      - Open Supabase SQL Editor
+      - Run the schema from `sql.txt` (creates tables and indexes)
+      - Apply RLS policies from `rls.txt`
+   
+   d. Configure Storage:
+      - Create a new bucket named `study-app-pdfs`
+      - Apply storage policies from `storage.txt`
+   
+   e. Enable Email Authentication:
+      - Go to Authentication → Providers
+      - Enable Email provider
 
-5. **Run the App Locally**:
+5. **Start the development server**
    ```bash
    npm run dev
    ```
-   App runs at `http://localhost:5173` (default Vite port).
+   
+   The app will be available at `http://localhost:5173`
 
-6. **Login**:
-   - Enable Email/Password in Supabase Auth.
-   - Create a user via Supabase dashboard or add a simple signup.
+6. **Create your account and start studying**
+   - Sign up through the app
+   - Upload your first PDF study material
+   - Generate quizzes or start chatting with your AI tutor
 
-### Optional: Add Your Study Materials
-- Upload any PDF study materials (textbooks, notes, reference books) via Home → Upload.
-- PDFs are processed for AI-powered quiz generation and RAG-based chat.
-- Optionally flag important reference materials for quick access.
+### Deployment
 
+Build for production and deploy to any static hosting:
 
-## Live Demo
+```bash
+npm run build
+```
 
-- URL: https://stdhub.surge.sh/
-- Test account:
-  - email: student@studyhub.com
-  - password: testcreds1234
+**Deploy to Surge:**
+```bash
+npm install -g surge
+surge dist yourdomain.surge.sh
+```
 
-**Home:**
-<img width="2558" height="1263" alt="Screenshot 2025-10-08 at 6 30 47 PM" src="https://github.com/user-attachments/assets/5ee46ee3-e890-4ada-9013-063759f74735" />
+Also works with Vercel, Netlify, Cloudflare Pages, GitHub Pages, and similar platforms.
 
-**Quiz:**
-<img width="2558" height="1263" alt="Screenshot 2025-10-08 at 6 32 03 PM" src="https://github.com/user-attachments/assets/4a872752-9fe9-4a3d-9cd9-6b074b8c06d5" />
+### Troubleshooting
 
-**Chat:**
-<img width="2558" height="1263" alt="Screenshot 2025-10-08 at 6 32 39 PM" src="https://github.com/user-attachments/assets/cc35b6bd-5cc2-4d76-b30d-b9d653d25721" />
+If you run into issues:
+- Double-check all `.env` values are correct (Supabase URL/key, AI key/endpoint/model)
+- Make sure database tables, RLS policies, and storage bucket are properly configured
+- Check browser console and network tab for specific errors
+- Verify Node.js version is 18 or higher
 
-**Profile:**
-<img width="2558" height="1263" alt="Screenshot 2025-10-08 at 6 33 23 PM" src="https://github.com/user-attachments/assets/ce4d7cbd-1f5f-49e1-b5fe-fd2567f0311e" />
+## Development Notes
 
+### Built with AI Assistance
+
+I built this project quickly using LLMs (Claude, GPT, Grok) to generate roughly 60% of the code. They helped with:
+- Component skeletons and service functions
+- Prompt engineering for quiz generation and RAG
+- Debugging Supabase RLS and React hooks
+- Optimizing state management and styling
+
+All AI-generated code was manually reviewed and customized for type safety, performance, and consistency. This approach let me move fast while maintaining quality through human oversight.
+
+### Features
+
+**Complete Core Features**
+- Source selector with PDF upload
+- PDF viewer with zoom, navigation, fullscreen
+- Quiz generator (MCQ/SAQ/LAQ) with scoring and explanations
+- Progress tracking with analytics dashboard
+- Chat UI with RAG-powered answers and citations
+- YouTube video recommendations with smart topic detection
+
+**Production-Ready Aspects**
+- Responsive design across all devices
+- Clean UI/UX with loading states and error handling
+- Robust database schema with Row-Level Security
+- Validated by real users who depend on it daily
+
+## Contributing
+
+Contributions are welcome. Whether you're fixing bugs, adding features, improving documentation, or sharing ideas—your help makes StudyHub better for everyone.
+
+### How to Contribute
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes
+4. Commit with clear messages (`git commit -m 'Add amazing feature'`)
+5. Push to your branch (`git push origin feature/amazing-feature`)
+6. Open a Pull Request
+
+### Development Guidelines
+
+- Follow existing TypeScript and React best practices
+- Maintain code style consistency
+- Write meaningful commit messages
+- Test your changes thoroughly
+- Update documentation for new features
+- Ensure proper TypeScript typing
+
+## Community & Support
+
+- **Issues**: [Report bugs or request features](https://github.com/yourusername/studyhub/issues)
+- **Discussions**: [Ask questions or share ideas](https://github.com/yourusername/studyhub/discussions)
+- **Pull Requests**: We review PRs regularly
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+In plain English: use it, modify it, distribute it freely, even commercially. Just include the original license.
+
+## Acknowledgments
+
+- Built with assistance from Claude, GPT, and Grok for rapid prototyping
+- Validated and refined by 10+ real learners using it for their studies
+- Inspired by the belief that education should be accessible to all
 
 ---
 
-If you run into issues:
-- Verify `.env` values (Supabase URL/key, AI key/base URL, model name)
-- Ensure tables/RLS/storage policies from `sql.txt`, `rls.txt`, `storage.txt` are applied
-- Check browser console/network logs for CORS/auth errors
+If StudyHub helps you, consider giving it a star on GitHub. It helps others discover the project and motivates continued development.
+
+---
+
+Built for learners everywhere.
+
+Questions? Ideas? Open an issue or start a discussion—I'm happy to help.
